@@ -182,7 +182,7 @@ object ScalaClientTest {
     } else {
       val classpath: String = System.getProperty("java.class.path")
       conf.put("spark.app.name", "SparkClientSuite Remote App")
-      conf.put(SparkLauncher.DRIVER_MEMORY, "512m")
+      conf.put(SparkLauncher.DRIVER_MEMORY, "1024m")
       conf.put(SparkLauncher.DRIVER_EXTRA_CLASSPATH, classpath)
       conf.put(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, classpath)
     }

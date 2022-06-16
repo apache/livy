@@ -39,7 +39,7 @@ class ReplDriverSuite extends FunSuite with LivyBaseUnitTestSuite {
 
   test("start a repl session using the rsc") {
     val client = new LivyClientBuilder()
-      .setConf(SparkLauncher.DRIVER_MEMORY, "512m")
+      .setConf(SparkLauncher.DRIVER_MEMORY, "1024m")
       .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, sys.props("java.class.path"))
       .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, sys.props("java.class.path"))
       .setConf(RSCConf.Entry.LIVY_JARS.key(), "")
