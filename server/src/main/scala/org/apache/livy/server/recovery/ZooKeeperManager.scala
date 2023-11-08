@@ -26,6 +26,7 @@ import org.apache.curator.framework.CuratorFrameworkFactory
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.retry.RetryNTimes
 import org.apache.zookeeper.KeeperException.NoNodeException
+import org.apache.zookeeper.client.ZKClientConfig
 
 import org.apache.livy.LivyConf
 import org.apache.livy.Logging
@@ -63,6 +64,26 @@ class ZooKeeperManager(
         "Correct format is <max retry count>,<sleep ms between retry>. e.g. 5,100")
   }
 
+  private[recovery] def createZKClientConfig = {
+    val clientConfig = new ZKClientConfig
+    clientConfig.setProperty("zookeeper.client.secure", "true")
+    clientConfig.setProperty("zookeeper.clientCnxnSocket",
+      livyConf.get(LivyConf.LIVY_ZK_CLIENT_SOCKET))
+    clientConfig.setProperty("zookeeper.ssl.keyStore.location",
+      livyConf.get(LivyConf.SSL_KEYSTORE))
+    clientConfig.setProperty("zookeeper.ssl.keyStore.password",
+      livyConf.get(LivyConf.LIVY_ZK_KEYSTORE_PASS))
+    clientConfig.setProperty("zookeeper.ssl.keyStore.type",
+      livyConf.get(LivyConf.SSL_KEYSTORE_TYPE))
+    clientConfig.setProperty("zookeeper.ssl.trustStore.location",
+      livyConf.get(LivyConf.LIVY_ZK_TRUSTSTORE_FILE))
+    clientConfig.setProperty("zookeeper.ssl.trustStore.password",
+      livyConf.get(LivyConf.LIVY_ZK_TRUSTSTORE_PASS))
+    clientConfig.setProperty("zookeeper.ssl.trustStore.type",
+      livyConf.get(LivyConf.SSL_KEYSTORE_TYPE))
+    clientConfig
+  }
+
   private val curatorClient = mockCuratorClient.getOrElse {
     if (livyConf.getBoolean(LivyConf.ZK_SASL_ENABLED)) {
       System.setProperty("zookeeper.sasl.client", "true")
@@ -73,10 +94,13 @@ class ZooKeeperManager(
       info(s"ZooKeeper SASL authentication enabled with login context: " +
         s"${Option(loginContext).getOrElse("Client")}")
     }
-    CuratorFrameworkFactory.builder()
-      .connectString(zkAddress)
-      .retryPolicy(retryPolicy)
-      .build()
+    val builder = CuratorFrameworkFactory.builder()
+    builder.connectString(zkAddress)
+    builder.retryPolicy(retryPolicy)
+    if (livyConf.getBoolean(LivyConf.LIVY_ZK_CLIENT_SECURE)) {
+      builder.zkClientConfig(createZKClientConfig)
+    }
+    builder.build()
   }
 
   curatorClient.getUnhandledErrorListenable().addListener(new UnhandledErrorListener {

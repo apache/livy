@@ -367,6 +367,13 @@ object LivyConf {
 
   val SESSION_ALLOW_CUSTOM_CLASSPATH = Entry("livy.server.session.allow-custom-classpath", false)
 
+  val LIVY_ZK_CLIENT_SOCKET = Entry("livy.server.zk.clientCnxnSocket",
+    "org.apache.zookeeper.ClientCnxnSocketNetty")
+  val LIVY_ZK_KEYSTORE_PASS = Entry("livy.server.zk.ssl.keyStore.password", null)
+  val LIVY_ZK_TRUSTSTORE_FILE = Entry("livy.server.zk.ssl.truststore.location", null)
+  val LIVY_ZK_TRUSTSTORE_PASS = Entry("livy.server.zk.ssl.truststore.password", null)
+  val LIVY_ZK_CLIENT_SECURE = Entry("livy.server.zk.client.secure", false)
+
   val SPARK_MASTER = "spark.master"
   val SPARK_DEPLOY_MODE = "spark.submit.deployMode"
   val SPARK_JARS = "spark.jars"

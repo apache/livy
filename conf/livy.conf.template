@@ -172,6 +172,13 @@
 # JAAS login context name for ZooKeeper SASL authentication.
 # livy.server.zk.sasl.login-context = Client
 
+# The SSL configuration for zookeeper.
+# livy.server.zk.client.secure=false
+# livy.server.zk.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty
+# livy.server.zk.ssl.keyStore.password=
+# livy.server.zk.ssl.truststore.location=
+# livy.server.zk.ssl.truststore.password=
+
 # If Livy can't find the yarn app within this time, consider it lost.
 # livy.server.yarn.app-lookup-timeout = 120s
 # When the cluster is busy, we may fail to launch yarn app in app-lookup-timeout, then it would

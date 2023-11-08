@@ -41,12 +41,17 @@ class ZooKeeperStateStoreSpec extends FunSpec with LivyBaseUnitTestSuite {
     val key = "key"
     val prefixedKey = s"/livy/$key"
 
-    def withMock[R](testBody: TestFixture => R): R = {
-      val curatorClient = mock[CuratorFramework]
-      when(curatorClient.getUnhandledErrorListenable())
+    def mockCurator(): CuratorFramework = {
+      val cc = mock[CuratorFramework]
+      when(cc.getUnhandledErrorListenable())
         .thenReturn(mock[Listenable[UnhandledErrorListener]])
-      when(curatorClient.getConnectionStateListenable())
+      when(cc.getConnectionStateListenable())
         .thenReturn(mock[Listenable[ConnectionStateListener]])
+      cc
+    }
+
+    def withMock[R](testBody: TestFixture => R): R = {
+      val curatorClient = mockCurator()
       val zkManager = new ZooKeeperManager(conf, Some(curatorClient))
       zkManager.start()
       val stateStore = new ZooKeeperStateStore(conf, zkManager)
@@ -191,9 +196,7 @@ class ZooKeeperStateStoreSpec extends FunSpec with LivyBaseUnitTestSuite {
     }
 
     it("should register a ConnectionStateListener that handles all connection states") {
-      val curatorClient = mock[CuratorFramework]
-      when(curatorClient.getUnhandledErrorListenable())
-        .thenReturn(mock[Listenable[UnhandledErrorListener]])
+      val curatorClient = mockCurator()
       val listenable = mock[Listenable[ConnectionStateListener]]
       when(curatorClient.getConnectionStateListenable()).thenReturn(listenable)
 
@@ -218,6 +221,83 @@ class ZooKeeperStateStoreSpec extends FunSpec with LivyBaseUnitTestSuite {
 
       System.getProperty("zookeeper.sasl.client") shouldBe null
       System.getProperty("zookeeper.sasl.clientconfig") shouldBe null
+    }
+
+    describe("SSL config") {
+      case class SslTestFixture(zkManager: ZooKeeperManager, curatorClient: CuratorFramework)
+
+      def makeSslConf(): LivyConf = {
+        val c = new LivyConf()
+        c.set(LivyConf.RECOVERY_STATE_STORE_URL, "/tmp/livy")
+        c.set(LivyConf.SSL_KEYSTORE, "/tmp/keystore.jks")
+        c.set(LivyConf.SSL_KEYSTORE_PASSWORD, "keystorePass")
+        c.set(LivyConf.SSL_KEY_PASSWORD, "keyPass")
+        c.set(LivyConf.SSL_KEYSTORE_TYPE, "JKS")
+        c.set(LivyConf.LIVY_ZK_KEYSTORE_PASS, "keystorePass")
+        c.set(LivyConf.LIVY_ZK_TRUSTSTORE_FILE, "/tmp/truststore.jks")
+        c.set(LivyConf.LIVY_ZK_TRUSTSTORE_PASS, "truststorePass")
+        c
+      }
+
+      def withSslMock[R](sslConf: LivyConf)(testBody: SslTestFixture => R): R = {
+        val curatorClient = mockCurator()
+        val zkManager = new ZooKeeperManager(sslConf, Some(curatorClient))
+        zkManager.start()
+        testBody(SslTestFixture(zkManager, curatorClient))
+      }
+
+      it("createZKClientConfig should set secure flag and socket class") {
+        withSslMock(makeSslConf()) { f =>
+          verify(f.curatorClient).start()
+          val zkConfig = f.zkManager.createZKClientConfig
+          zkConfig.getProperty("zookeeper.client.secure") shouldBe "true"
+          zkConfig.getProperty("zookeeper.clientCnxnSocket") shouldBe
+            "org.apache.zookeeper.ClientCnxnSocketNetty"
+        }
+      }
+
+      it("createZKClientConfig should set keystore location, password and type from LivyConf") {
+        withSslMock(makeSslConf()) { f =>
+          verify(f.curatorClient).start()
+          val zkConfig = f.zkManager.createZKClientConfig
+          zkConfig.getProperty("zookeeper.ssl.keyStore.location") shouldBe "/tmp/keystore.jks"
+          zkConfig.getProperty("zookeeper.ssl.keyStore.password") shouldBe "keystorePass"
+          zkConfig.getProperty("zookeeper.ssl.keyStore.type") shouldBe "JKS"
+        }
+      }
+
+      it("createZKClientConfig should set truststore location, password and type from LivyConf") {
+        withSslMock(makeSslConf()) { f =>
+          verify(f.curatorClient).start()
+          val zkConfig = f.zkManager.createZKClientConfig
+          zkConfig.getProperty("zookeeper.ssl.trustStore.location") shouldBe
+            "/tmp/truststore.jks"
+          zkConfig.getProperty("zookeeper.ssl.trustStore.password") shouldBe "truststorePass"
+          // trustStore.type reuses SSL_KEYSTORE_TYPE
+          zkConfig.getProperty("zookeeper.ssl.trustStore.type") shouldBe "JKS"
+        }
+      }
+
+      it("should build successfully when LIVY_ZK_CLIENT_SECURE is enabled") {
+        val sslConf = makeSslConf()
+        sslConf.set(LivyConf.LIVY_ZK_CLIENT_SECURE, true)
+        noException should be thrownBy {
+          val zkManager = new ZooKeeperManager(sslConf, Some(mockCurator()))
+          zkManager.start()
+          zkManager.stop()
+        }
+      }
+
+      it("should build successfully when LIVY_ZK_CLIENT_SECURE is disabled") {
+        val noSslConf = new LivyConf()
+        noSslConf.set(LivyConf.RECOVERY_STATE_STORE_URL, "host")
+        noSslConf.set(LivyConf.LIVY_ZK_CLIENT_SECURE, false)
+        noException should be thrownBy {
+          val zkManager = new ZooKeeperManager(noSslConf, Some(mockCurator()))
+          zkManager.start()
+          zkManager.stop()
+        }
+      }
     }
   }
 }
