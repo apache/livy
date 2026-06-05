@@ -29,7 +29,7 @@ HIVE_PACKAGE="apache-hive-${HIVE_VERSION}-bin.tar.gz"
 SPARK_VERSION=3.2.3
 SPARK_PACKAGE="spark-${SPARK_VERSION}-bin-without-hadoop.tgz"
 SCALA_VERSION=2.12
-LIVY_VERSION="0.10.0-incubating-SNAPSHOT_${SCALA_VERSION}"
+LIVY_VERSION="1.0.0-SNAPSHOT_${SCALA_VERSION}"
 LIVY_PACKAGE="apache-livy-${LIVY_VERSION}-bin.zip"
 LOCALLY_BUILT_LIVY_PACKAGE="${SCRIPT_DIR}/../../assembly/target/${LIVY_PACKAGE}"
 
@@ -59,7 +59,7 @@ fi
 # Download livy if needed
 if [ ! -f "${SCRIPT_DIR}/livy-dev-server/${LIVY_PACKAGE}" ]; then
     curl --fail -L --retry 3 -o "${SCRIPT_DIR}/livy-dev-server/${LIVY_PACKAGE}" \
-      "${APACHE_ARCHIVE_ROOT}/incubator/livy/${LIVY_VERSION}/${LIVY_PACKAGE}"
+      "${APACHE_ARCHIVE_ROOT}/livy/${LIVY_VERSION}/${LIVY_PACKAGE}"
 fi
 
 

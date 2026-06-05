@@ -87,9 +87,9 @@ if [ -z "$GPG_PASSPHRASE" ]; then
 fi
 
 # Destination directory on remote server
-RELEASE_STAGING_LOCATION="https://dist.apache.org/repos/dist/dev/incubator/livy"
+RELEASE_STAGING_LOCATION="https://dist.apache.org/repos/dist/dev/livy"
 
-LIVY_REPO=${LIVY_REPO:-https://gitbox.apache.org/repos/asf/incubator-livy.git}
+LIVY_REPO=${LIVY_REPO:-https://gitbox.apache.org/repos/asf/livy.git}
 GPG="gpg --no-tty --batch --pinentry-mode loopback"
 NEXUS_ROOT=https://repository.apache.org/service/local/staging
 NEXUS_PROFILE=91529f2f65d84e # Profile for Livy staging uploads
@@ -102,8 +102,8 @@ rm -rf release-staging
 mkdir release-staging
 cd release-staging
 
-git clone $LIVY_REPO incubator-livy
-cd incubator-livy
+git clone $LIVY_REPO livy
+cd livy
 git checkout $GIT_REF
 git_hash=`git rev-parse --short HEAD`
 echo "Checked out Livy git hash $git_hash"
@@ -127,7 +127,7 @@ SCALA_2_11_PROFILES="-Pscala-2.11"
 if [[ "$1" == "package" ]]; then
   # Source and binary tarballs
   echo "Packaging release tarballs"
-  cp -r incubator-livy $ARCHIVE_NAME_PREFIX
+  cp -r livy $ARCHIVE_NAME_PREFIX
   zip -r $SRC_ARCHIVE $ARCHIVE_NAME_PREFIX
   echo $GPG_PASSPHRASE | $GPG --passphrase-fd 0 --armour --output $SRC_ARCHIVE.asc --detach-sig $SRC_ARCHIVE
   shasum -a 512 $SRC_ARCHIVE > $SRC_ARCHIVE.sha512
@@ -138,7 +138,7 @@ if [[ "$1" == "package" ]]; then
     BIN_ARCHIVE="${ARCHIVE_NAME_PREFIX}_$1-bin.zip"
     MVN_FLAGS="clean package -DskipITs -DskipTests -Dgenerate-third-party -e $2"
 
-    cp -r incubator-livy $ARCHIVE_NAME_PREFIX-bin
+    cp -r livy $ARCHIVE_NAME_PREFIX-bin
     cd $ARCHIVE_NAME_PREFIX-bin
 
     $MVN $MVN_FLAGS
@@ -178,7 +178,7 @@ if [[ "$1" == "publish-release" ]]; then
   tmp_repo=$(pwd)
   cd ..
 
-  cd incubator-livy
+  cd livy
   # Publish Livy to Maven release repo
   echo "Publishing Livy checkout at '$GIT_REF' ($git_hash)"
   echo "Publish version is $LIVY_VERSION"

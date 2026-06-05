@@ -8,7 +8,7 @@
 (Please explain how this patch was tested. E.g. unit tests, integration tests, manual tests)
 (If this patch involves UI changes, please attach a screenshot; otherwise, remove this)
 
-Please review https://livy.incubator.apache.org/community/ before opening a pull request.
+Please review https://livy.apache.org/community/ before opening a pull request.
 
 ## Was this patch authored or co-authored using generative AI tooling?
 
