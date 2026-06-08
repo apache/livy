@@ -1,11 +1,12 @@
 # Apache Livy
 
-[![Build Status](https://travis-ci.org/apache/incubator-livy.svg?branch=master)](https://travis-ci.org/apache/incubator-livy)
+[![Unit Tests](https://github.com/apache/livy/actions/workflows/unit-tests.yaml/badge.svg?branch=master)](https://github.com/apache/livy/actions/workflows/unit-tests.yaml)
+[![Integration Tests](https://github.com/apache/livy/actions/workflows/integration-tests.yaml/badge.svg?branch=master)](https://github.com/apache/livy/actions/workflows/integration-tests.yaml)
 
 Apache Livy is an open source REST interface for interacting with
-[Apache Spark](http://spark.apache.org) from anywhere. It supports executing snippets of code or
+[Apache Spark](https://spark.apache.org) from anywhere. It supports executing snippets of code or
 programs in a Spark context that runs locally or in
-[Apache Hadoop YARN](http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html).
+[Apache Hadoop YARN](https://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html).
 
 * Interactive Scala, Python and R shells
 * Batch submissions in Scala, Java, Python
@@ -13,14 +14,14 @@ programs in a Spark context that runs locally or in
 * Can be used for submitting jobs from anywhere with REST
 * Does not require any code change to your programs
 
-[Pull requests](https://github.com/apache/incubator-livy/pulls) are welcomed! But before you begin,
-please check out the [Contributing](http://livy.incubator.apache.org/community#Contributing)
-section on the [Community](http://livy.incubator.apache.org/community) page of our website.
+[Pull requests](https://github.com/apache/livy/pulls) are welcomed! But before you begin,
+please check out the [Contributing](https://livy.apache.org/community/#Contributing)
+section on the [Community](https://livy.apache.org/community/) page of our website.
 
 ## Online Documentation
 
 Guides and documentation on getting started using Livy, example code snippets, and Livy API
-documentation can be found at [livy.incubator.apache.org](http://livy.incubator.apache.org).
+documentation can be found at [livy.apache.org](https://livy.apache.org).
 
 ## Before Building Livy
 
@@ -66,16 +67,16 @@ Livy requires Spark 3.0+. You can switch to a different version of Spark by sett
 Livy is built using [Apache Maven](http://maven.apache.org). To check out and build Livy, run:
 
 ```
-git clone https://github.com/apache/incubator-livy.git
-cd incubator-livy
+git clone https://github.com/apache/livy.git
+cd livy
 mvn package
 ```
 
 You can also use the provided [Dockerfile](./dev/docker/livy-dev-base/Dockerfile):
 
 ```
-git clone https://github.com/apache/incubator-livy.git
-cd incubator-livy
+git clone https://github.com/apache/livy.git
+cd livy
 docker build -t livy-ci dev/docker/livy-dev-base/
 docker run --rm -it -v $(pwd):/workspace -v $HOME/.m2:/root/.m2 livy-ci mvn package -Pspark3 -Pscala-2.12
 ```
