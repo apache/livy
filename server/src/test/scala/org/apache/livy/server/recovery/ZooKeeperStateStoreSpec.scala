@@ -298,6 +298,23 @@ class ZooKeeperStateStoreSpec extends FunSpec with LivyBaseUnitTestSuite {
           zkManager.stop()
         }
       }
+
+      Seq(
+        (LivyConf.SSL_KEYSTORE, "keystore location"),
+        (LivyConf.LIVY_ZK_KEYSTORE_PASS, "keystore password"),
+        (LivyConf.LIVY_ZK_TRUSTSTORE_FILE, "truststore location"),
+        (LivyConf.LIVY_ZK_TRUSTSTORE_PASS, "truststore password")
+      ).foreach { case (entry, label) =>
+        it(s"should fail fast when LIVY_ZK_CLIENT_SECURE is enabled but $label is missing") {
+          val sslConf = makeSslConf()
+          sslConf.set(LivyConf.LIVY_ZK_CLIENT_SECURE, true)
+          sslConf.set(entry, null)
+          val thrown = the[IllegalArgumentException] thrownBy {
+            new ZooKeeperManager(sslConf)
+          }
+          thrown.getMessage should include(entry.key)
+        }
+      }
     }
   }
 }

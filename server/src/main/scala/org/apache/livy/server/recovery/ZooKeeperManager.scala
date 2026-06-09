@@ -64,6 +64,18 @@ class ZooKeeperManager(
         "Correct format is <max retry count>,<sleep ms between retry>. e.g. 5,100")
   }
 
+  if (livyConf.getBoolean(LivyConf.LIVY_ZK_CLIENT_SECURE)) {
+    Seq(
+      (LivyConf.SSL_KEYSTORE, livyConf.get(LivyConf.SSL_KEYSTORE)),
+      (LivyConf.LIVY_ZK_KEYSTORE_PASS, livyConf.get(LivyConf.LIVY_ZK_KEYSTORE_PASS)),
+      (LivyConf.LIVY_ZK_TRUSTSTORE_FILE, livyConf.get(LivyConf.LIVY_ZK_TRUSTSTORE_FILE)),
+      (LivyConf.LIVY_ZK_TRUSTSTORE_PASS, livyConf.get(LivyConf.LIVY_ZK_TRUSTSTORE_PASS))
+    ).foreach { case (entry, value) =>
+      require(value != null && !value.trim.isEmpty,
+        s"Please config ${entry.key} when ${LivyConf.LIVY_ZK_CLIENT_SECURE.key}=true.")
+    }
+  }
+
   private[recovery] def createZKClientConfig = {
     val clientConfig = new ZKClientConfig
     clientConfig.setProperty("zookeeper.client.secure", "true")
