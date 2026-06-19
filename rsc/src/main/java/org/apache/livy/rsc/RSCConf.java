@@ -58,6 +58,9 @@ public class RSCConf extends ClientConf<RSCConf> {
     // How long will the RSC wait for a connection for a Livy server before shutting itself down.
     SERVER_IDLE_TIMEOUT("server.idle-timeout", "10m"),
 
+    // Use driver's reported hostname instead of socket IP. Useful for Kubernetes + Istio mode.
+    DRIVER_ADDRESS_USE_HOSTNAME("driver.address.use-hostname", false),
+
     PROXY_USER("proxy-user", null),
 
     RPC_SERVER_ADDRESS("rpc.server.address", null),

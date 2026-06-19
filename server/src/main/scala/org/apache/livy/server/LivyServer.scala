@@ -41,7 +41,7 @@ import org.apache.livy.server.batch.BatchSessionServlet
 import org.apache.livy.server.interactive.InteractiveSessionServlet
 import org.apache.livy.server.recovery.{SessionStore, StateStore, ZooKeeperManager}
 import org.apache.livy.server.ui.UIServlet
-import org.apache.livy.sessions.{BatchSessionManager, InteractiveSessionManager}
+import org.apache.livy.sessions.{BatchSessionManager, InteractiveSessionManager, SessionManager}
 import org.apache.livy.sessions.SessionManager.SESSION_RECOVERY_MODE_OFF
 import org.apache.livy.utils.{SparkKubernetesApp, SparkYarnApp}
 import org.apache.livy.utils.LivySparkUtils._
@@ -176,6 +176,39 @@ class LivyServer extends Logging {
       }
     }
 
+    // Operator endpoint: re-scan the recovery state store and import any sessions
+    // written by another Livy server. Guarded by livy.superusers.
+    val recoveryServlet = new JsonServlet {
+      before() {
+        contentType = "application/json"
+        val user = request.getRemoteUser()
+        if (!accessManager.checkSuperUser(user)) {
+          halt(403, Map("msg" -> s"User '$user' not authorized for recovery endpoints."))
+        }
+      }
+
+      private def resultMap(r: SessionManager.RefreshResult): Map[String, Int] =
+        Map("added" -> r.added, "total" -> r.total, "failed" -> r.failed)
+
+      post("/sessions/refresh") {
+        info(s"Interactive session refresh triggered by user='${request.getRemoteUser()}'")
+        resultMap(interactiveSessionManager.refresh())
+      }
+
+      post("/batches/refresh") {
+        info(s"Batch session refresh triggered by user='${request.getRemoteUser()}'")
+        resultMap(batchSessionManager.refresh())
+      }
+
+      post("/refresh") {
+        info(s"Full session refresh triggered by user='${request.getRemoteUser()}'")
+        Map(
+          "batches" -> resultMap(batchSessionManager.refresh()),
+          "sessions" -> resultMap(interactiveSessionManager.refresh())
+        )
+      }
+    }
+
     // Servlet for hosting static files such as html, css, and js
     // Necessary since Jetty cannot set it's resource base inside a jar
     // Returns 404 if the file does not exist
@@ -254,6 +287,8 @@ class LivyServer extends Logging {
             context.mountMetricsAdminServlet("/metrics")
 
             mount(context, livyVersionServlet, "/version/*")
+
+            mount(context, recoveryServlet, "/recovery/*")
           } catch {
             case e: Throwable =>
               error("Exception thrown when initializing server", e)

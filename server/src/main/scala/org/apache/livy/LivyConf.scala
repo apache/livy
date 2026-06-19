@@ -304,6 +304,11 @@ object LivyConf {
   // How often Livy polls Kubernetes to refresh Kubernetes app state.
   val KUBERNETES_POLL_INTERVAL = Entry("livy.server.kubernetes.poll-interval", "15s")
 
+  // Whether Livy fetches executor pods each poll cycle (used for executor log URLs
+  // and per-executor diagnostics). Driver pod is polled regardless.
+  val KUBERNETES_EXECUTOR_TRACKING_ENABLED =
+    Entry("livy.server.kubernetes.executor-tracking.enabled", true)
+
   // How long to check livy session leakage.
   val KUBERNETES_APP_LEAKAGE_CHECK_TIMEOUT =
     Entry("livy.server.kubernetes.app-leakage.check-timeout", "600s")

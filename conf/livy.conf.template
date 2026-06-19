@@ -267,6 +267,10 @@
 # details, routes, etc...)
 # livy.server.kubernetes.poll-interval = 15s
 
+# Whether Livy fetches executor pods each poll cycle (used for executor log URLs and
+# per-executor diagnostics). Disable on large clusters; driver pod is polled regardless.
+# livy.server.kubernetes.executor-tracking.enabled = true
+
 # Weather to create Kubernetes Nginx Ingress for Spark UI. If set to true, configure the desired
 # options below
 # livy.server.kubernetes.ingress.create = false

@@ -70,6 +70,7 @@ case class InteractiveRecoveryMetadata(
     // proxyUser is deprecated. It is available here only for backward compatibility
     proxyUser: Option[String],
     rscDriverUri: Option[URI],
+    namespace: String,
     version: Int = 1)
   extends RecoveryMetadata
 
@@ -93,6 +94,7 @@ object InteractiveSession extends Logging {
       mockClient: Option[RSCClient] = None): InteractiveSession = {
     val appTag = s"livy-session-$id-${Random.alphanumeric.take(8).mkString}".toLowerCase()
     val impersonatedUser = accessManager.checkImpersonation(proxyUser, owner)
+    val namespace = SparkApp.getNamespace(request.conf, livyConf)
 
     val client = mockClient.orElse {
       val conf = SparkApp.prepareSparkConf(appTag, livyConf, prepareConf(
@@ -153,6 +155,7 @@ object InteractiveSession extends Logging {
       request.numExecutors,
       request.pyFiles,
       request.queue,
+      namespace,
       mockApp)
   }
 
@@ -193,6 +196,7 @@ object InteractiveSession extends Logging {
       metadata.numExecutors,
       metadata.pyFiles,
       metadata.queue,
+      metadata.namespace,
       mockApp)
   }
 
@@ -432,6 +436,7 @@ class InteractiveSession(
     val numExecutors: Option[Int],
     val pyFiles: List[String],
     val queue: Option[String],
+    val namespace: String,
     mockApp: Option[SparkApp]) // For unit test.
   extends Session(id, name, owner, ttl, idleTimeout, livyConf)
   with SessionHeartbeat
@@ -461,11 +466,14 @@ class InteractiveSession(
     app = mockApp.orElse {
       val driverProcess = client.flatMap { c => Option(c.getDriverProcess) }
         .map(new LineBufferedProcess(_, livyConf.getInt(LivyConf.SPARK_LOGS_SIZE)))
+      val extrasMap = Map(SparkApp.SPARK_KUBERNETES_NAMESPACE_KEY -> namespace)
       if (!livyConf.isRunningOnKubernetes()) {
-        driverProcess.map(_ => SparkApp.create(appTag, appId, driverProcess, livyConf, Some(this)))
+        driverProcess.map { _ =>
+          SparkApp.create(appTag, appId, driverProcess, livyConf, Some(this), extrasMap)
+        }
       } else {
         // Create SparkApp for Kubernetes anyway
-        Some(SparkApp.create(appTag, appId, driverProcess, livyConf, Some(this)))
+        Some(SparkApp.create(appTag, appId, driverProcess, livyConf, Some(this), extrasMap))
       }
     }
 
@@ -534,7 +542,7 @@ class InteractiveSession(
       heartbeatTimeout.toSeconds.toInt, owner, ttl, idleTimeout,
       driverMemory, driverCores, executorMemory, executorCores, conf,
       archives, files, jars, numExecutors, pyFiles, queue,
-      proxyUser, rscDriverUri)
+      proxyUser, rscDriverUri, namespace)
 
   override def state: SessionState = {
     if (serverSideState == SessionState.Running) {

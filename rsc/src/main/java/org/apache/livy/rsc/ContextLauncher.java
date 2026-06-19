@@ -327,13 +327,18 @@ class ContextLauncher {
     //Note. Your compiler or IDE may identify this method as unused
     //tests fail without it
     public void handle(ChannelHandlerContext ctx, RemoteDriverAddress msg) {
-      InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
-      String ip = insocket.getAddress().getHostAddress();
-      ContextInfo info = new ContextInfo(ip, msg.port, clientId, secret);
+      String driverHost;
+      if (conf.getBoolean(DRIVER_ADDRESS_USE_HOSTNAME)) {
+        driverHost = msg.host;
+      } else {
+        InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
+        driverHost = insocket.getAddress().getHostAddress();
+      }
+      ContextInfo info = new ContextInfo(driverHost, msg.port, clientId, secret);
       if (promise.trySuccess(info)) {
         timeout.cancel(true);
         LOG.debug("Received driver info for client {}: {}/{}.", client.getChannel(),
-                msg.host, msg.port);
+          driverHost, msg.port);
       } else {
         LOG.warn("Connection established but promise is already finalized.");
       }

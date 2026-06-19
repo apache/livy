@@ -209,13 +209,23 @@ class SessionManagerSpec extends FunSpec with Matchers with LivyBaseUnitTestSuit
       when(session.lastActivity).thenReturn(System.nanoTime())
       when(session.state).thenReturn(state)
     }
+
+    it("should be idempotent on register() for a session id already tracked") {
+      val (livyConf, manager) = createSessionManager()
+      val session = new MockSession(manager.nextId(), null, livyConf, Some("foo"))
+      val first = manager.register(session)
+      val again = manager.register(session)
+      again should be theSameInstanceAs first
+      manager.size() should be (1)
+      session.stopped should be (false)
+    }
   }
 
   describe("BatchSessionManager") {
     implicit def executor: ExecutionContext = ExecutionContext.global
 
     def makeMetadata(id: Int, appTag: String): BatchRecoveryMetadata = {
-      BatchRecoveryMetadata(id, Some(s"test-session-$id"), None, appTag, null, None)
+      BatchRecoveryMetadata(id, Some(s"test-session-$id"), None, appTag, null, None, "")
     }
 
     def mockSession(id: Int): BatchSession = {
@@ -304,6 +314,95 @@ class SessionManagerSpec extends FunSpec with Matchers with LivyBaseUnitTestSuit
       sm.shutdown()
 
       verify(session, never).stop()
+    }
+
+    it("refresh should be a no-op when state store has no new sessions") {
+      val conf = new LivyConf()
+      val sessionStore = mock[SessionStore]
+      when(sessionStore.getNextSessionId("batch")).thenReturn(0)
+      when(sessionStore.getAllSessions[BatchRecoveryMetadata]("batch"))
+        .thenReturn(Seq.empty)
+
+      val sm = new BatchSessionManager(conf, sessionStore)
+      val result = sm.refresh()
+      result.added shouldBe 0
+      result.total shouldBe 0
+      result.failed shouldBe 0
+    }
+
+    it("refresh should import only previously-unseen sessions and skip already-known ids") {
+      val conf = new LivyConf()
+      conf.set(LivyConf.LIVY_SPARK_MASTER.key, "yarn-cluster")
+
+      val sessionStore = mock[SessionStore]
+      // Initial recovery: only id=0.
+      when(sessionStore.getNextSessionId("batch")).thenReturn(1)
+      when(sessionStore.getAllSessions[BatchRecoveryMetadata]("batch"))
+        .thenReturn(Seq(Try(makeMetadata(0, "t0"))))
+
+      val sm = new BatchSessionManager(conf, sessionStore)
+      sm.size() shouldBe 1
+      sm.get(0) shouldBe defined
+
+      // After a peer writes id=1 to the state store, refresh should add it without
+      // re-registering id=0.
+      when(sessionStore.getNextSessionId("batch")).thenReturn(2)
+      when(sessionStore.getAllSessions[BatchRecoveryMetadata]("batch"))
+        .thenReturn(Seq(Try(makeMetadata(0, "t0")), Try(makeMetadata(1, "t1"))))
+
+      val r1 = sm.refresh()
+      r1.added shouldBe 1
+      r1.total shouldBe 2
+      sm.get(1) shouldBe defined
+
+      // A second refresh with no new entries should add nothing.
+      val r2 = sm.refresh()
+      r2.added shouldBe 0
+      r2.total shouldBe 2
+    }
+
+    it("refresh should advance the id counter forward but never backward") {
+      val conf = new LivyConf()
+      val sessionStore = mock[SessionStore]
+      when(sessionStore.getNextSessionId("batch")).thenReturn(0)
+      when(sessionStore.getAllSessions[BatchRecoveryMetadata]("batch"))
+        .thenReturn(Seq.empty)
+
+      val sm = new BatchSessionManager(conf, sessionStore)
+
+      // Local counter ahead of state store.
+      sm.nextId() shouldBe 0
+      sm.nextId() shouldBe 1
+      sm.nextId() shouldBe 2
+
+      // State store reports a smaller next id; refresh must NOT regress local counter.
+      when(sessionStore.getNextSessionId("batch")).thenReturn(1)
+      sm.refresh()
+      sm.nextId() shouldBe 3
+
+      // State store reports a larger next id; refresh SHOULD jump local counter forward.
+      when(sessionStore.getNextSessionId("batch")).thenReturn(99)
+      sm.refresh()
+      sm.nextId() shouldBe 99
+    }
+
+    it("refresh should report deserialization failures via failed count") {
+      val conf = new LivyConf()
+      conf.set(LivyConf.LIVY_SPARK_MASTER.key, "yarn-cluster")
+
+      val sessionStore = mock[SessionStore]
+      when(sessionStore.getNextSessionId("batch")).thenReturn(1)
+      when(sessionStore.getAllSessions[BatchRecoveryMetadata]("batch"))
+        .thenReturn(Seq(
+          Try(makeMetadata(0, "t0")),
+          Failure(new java.io.IOException("corrupted entry id=42")),
+          Failure(new java.io.IOException("corrupted entry id=43"))))
+
+      val sm = new BatchSessionManager(conf, sessionStore)
+      val r = sm.refresh()
+      r.added shouldBe 0
+      r.total shouldBe 1
+      r.failed shouldBe 2
     }
   }
 }

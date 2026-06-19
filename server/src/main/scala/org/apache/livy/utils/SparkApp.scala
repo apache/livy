@@ -17,6 +17,9 @@
 
 package org.apache.livy.utils
 
+import java.io.{File, FileInputStream}
+import java.util.Properties
+
 import scala.collection.JavaConverters._
 
 import org.apache.livy.LivyConf
@@ -56,12 +59,52 @@ trait SparkAppListener {
  */
 object SparkApp {
   private val SPARK_YARN_TAG_KEY = "spark.yarn.tags"
-
+  val SPARK_KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   object State extends Enumeration {
     val STARTING, RUNNING, FINISHED, FAILED, KILLED = Value
   }
   type State = State.Value
 
+  val DEFAULT_KUBERNETES_NAMESPACE = "default"
+
+  /**
+   * Resolve the Kubernetes namespace a Spark application should run in.
+   *
+   * The namespace is looked up, in order of precedence, from:
+   *   1. the session's Spark configuration ([[SPARK_KUBERNETES_NAMESPACE_KEY]]),
+   *   2. `$SPARK_HOME/conf/spark-defaults.conf` (if present),
+   *   3. the [[DEFAULT_KUBERNETES_NAMESPACE]] fallback.
+   *
+   * The namespace is only meaningful on Kubernetes, so for any other cluster
+   * manager (YARN, local) an empty string is returned without touching the
+   * filesystem.
+   */
+  def getNamespace(conf: Map[String, String], livyConf: LivyConf): String = {
+    if (!livyConf.isRunningOnKubernetes()) {
+      return ""
+    }
+    conf.get(SPARK_KUBERNETES_NAMESPACE_KEY).filter(_.nonEmpty).getOrElse {
+      namespaceFromSparkDefaults(livyConf).getOrElse(DEFAULT_KUBERNETES_NAMESPACE)
+    }
+  }
+
+  private def namespaceFromSparkDefaults(livyConf: LivyConf): Option[String] = {
+    livyConf.sparkHome().flatMap { sparkHome =>
+      val sparkDefaults = new File(sparkHome, s"conf${File.separator}spark-defaults.conf")
+      if (!sparkDefaults.isFile) {
+        None
+      } else {
+        val in = new FileInputStream(sparkDefaults)
+        try {
+          val properties = new Properties()
+          properties.load(in)
+          Option(properties.getProperty(SPARK_KUBERNETES_NAMESPACE_KEY)).filter(_.nonEmpty)
+        } finally {
+          in.close()
+        }
+      }
+    }
+  }
   /**
    * Return cluster manager dependent SparkConf.
    *
@@ -102,11 +145,12 @@ object SparkApp {
       appId: Option[String],
       process: Option[LineBufferedProcess],
       livyConf: LivyConf,
-      listener: Option[SparkAppListener]): SparkApp = {
+      listener: Option[SparkAppListener],
+      extrasMap: Map[String, String]): SparkApp = {
     if (livyConf.isRunningOnYarn()) {
       new SparkYarnApp(uniqueAppTag, appId, process, listener, livyConf)
     } else if (livyConf.isRunningOnKubernetes()) {
-      new SparkKubernetesApp(uniqueAppTag, appId, process, listener, livyConf)
+      new SparkKubernetesApp(uniqueAppTag, appId, process, listener, livyConf, extrasMap)
     } else {
       require(process.isDefined, "process must not be None when Livy master is not YARN or" +
         "Kubernetes.")

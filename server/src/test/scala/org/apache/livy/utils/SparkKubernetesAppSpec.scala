@@ -18,6 +18,8 @@ package org.apache.livy.utils
 
 import java.util.Objects._
 
+import scala.concurrent.Promise
+
 import io.fabric8.kubernetes.api.model._
 import io.fabric8.kubernetes.api.model.networking.v1.{Ingress, IngressRule, IngressSpec}
 import io.fabric8.kubernetes.client.KubernetesClient
@@ -121,6 +123,32 @@ class SparkKubernetesAppSpec extends FunSpec with LivyBaseUnitTestSuite with Bef
         .getExecutorsLogUrls.isEmpty)
     }
 
+    it("should return diagnostics without executor entries when executors is empty") {
+      // When livy.server.kubernetes.executor-tracking.enabled=false, the
+      // executor LIST in getApplicationReport is skipped and executors is
+      // passed in as Seq.empty. Diagnostics must still render the driver
+      // section without error.
+      val driverStatus = when(mock[PodStatus].getPhase).thenReturn("Running")
+        .getMock[PodStatus]
+      val driverMeta = when(mock[ObjectMeta].getName).thenReturn("driver-pod")
+        .getMock[ObjectMeta]
+      when(driverMeta.getNamespace).thenReturn("ns")
+      when(driverMeta.getLabels).thenReturn(Map.empty[String, String].asJava)
+      val driverSpec = when(mock[PodSpec].getNodeName).thenReturn("node-1")
+        .getMock[PodSpec]
+      when(driverSpec.getContainers).thenReturn(java.util.Collections.emptyList[Container])
+      when(driverStatus.getConditions).thenReturn(java.util.Collections.emptyList[PodCondition])
+      val driver = when(mock[Pod].getStatus).thenReturn(driverStatus).getMock[Pod]
+      when(driver.getMetadata).thenReturn(driverMeta)
+      when(driver.getSpec).thenReturn(driverSpec)
+
+      val diagnostics = KubernetesAppReport(
+        Some(driver), Seq.empty, IndexedSeq.empty, None, new LivyConf(false)
+      ).getApplicationDiagnostics
+      assert(diagnostics.exists(_.contains("driver-pod")))
+      assert(!diagnostics.exists(_.contains("executor")))
+    }
+
     it("should return driver ingress url") {
 
       def livyConf(protocol: Option[String]): LivyConf = {
@@ -181,6 +209,50 @@ class SparkKubernetesAppSpec extends FunSpec with LivyBaseUnitTestSuite with Bef
 
   }
 
+  describe("SparkKubernetesApp.appPromise") {
+    it("tryFailure must be a no-op after trySuccess (no IllegalStateException)") {
+      val p = Promise[KubernetesApplication]()
+      val app = mock[KubernetesApplication]
+      assert(p.trySuccess(app))
+      assert(!p.tryFailure(new IllegalStateException("simulated k8s API error")))
+      assert(p.future.value.exists(_.isSuccess))
+    }
+
+    it("trySuccess must be a no-op after tryFailure") {
+      val p = Promise[KubernetesApplication]()
+      assert(p.tryFailure(new IllegalStateException("simulated k8s API error")))
+      val app = mock[KubernetesApplication]
+      assert(!p.trySuccess(app))
+      assert(p.future.value.exists(_.isFailure))
+    }
+  }
+
+  describe("SparkKubernetesApp.kill") {
+    it("should remove the app from the monitor queue and be idempotent") {
+      // Drain anything left over from prior tests so we can assert exact size.
+      SparkKubernetesApp.clearApps
+      val sizeBefore = SparkKubernetesApp.getAppSize
+      val app = new SparkKubernetesApp(
+        "test-kill-tag",
+        None,
+        None,
+        None,
+        new LivyConf(false),
+        Map(SparkApp.SPARK_KUBERNETES_NAMESPACE_KEY -> "ns"),
+        SparkKubernetesApp.kubernetesClient)
+
+      // Constructor enqueues itself.
+      assert(SparkKubernetesApp.getAppSize === sizeBefore + 1)
+
+      app.kill()
+      assert(SparkKubernetesApp.getAppSize === sizeBefore)
+
+      // Idempotent: a second call must be a no-op for the queue.
+      app.kill()
+      assert(SparkKubernetesApp.getAppSize === sizeBefore)
+    }
+  }
+
   describe("KubernetesClientFactory") {
     it("should build KubernetesApi url from LivyConf masterUrl") {
       def actual(sparkMaster: String): String =
@@ -207,6 +279,13 @@ class SparkKubernetesAppSpec extends FunSpec with LivyBaseUnitTestSuite with Bef
       intercept[IllegalArgumentException] {
         KubernetesClientFactory.createKubernetesClient(conf)
       }
+    }
+
+    it("should enable executor tracking by default") {
+      // Preserve existing behavior: operators must opt in to skipping the
+      // executor LIST. This guards against an accidental default flip that
+      // would silently drop executor entries from session diagnostics.
+      assert(new LivyConf(false).getBoolean(LivyConf.KUBERNETES_EXECUTOR_TRACKING_ENABLED))
     }
   }
 

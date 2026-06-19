@@ -138,12 +138,24 @@ class BatchSessionSpec
       }) should be (true)
     }
 
+    it("should call kill on the app on stopSession") {
+      val conf = new LivyConf()
+      val mockApp = mock[SparkApp]
+      val m = BatchRecoveryMetadata(99, None, None, "appTag", null, None, "")
+      val batch = BatchSession.recover(m, conf, sessionStore, Some(mockApp))
+      batch.start()
+
+      batch.stopSession()
+
+      verify(mockApp).kill()
+    }
+
     def testRecoverSession(name: Option[String]): Unit = {
       val conf = new LivyConf()
       val req = new CreateBatchRequest()
       val name = Some("Test Batch Session")
       val mockApp = mock[SparkApp]
-      val m = BatchRecoveryMetadata(99, name, None, "appTag", null, None)
+      val m = BatchRecoveryMetadata(99, name, None, "appTag", null, None, "")
       val batch = BatchSession.recover(m, conf, sessionStore, Some(mockApp))
 
       batch.state shouldBe (SessionState.Recovering)
