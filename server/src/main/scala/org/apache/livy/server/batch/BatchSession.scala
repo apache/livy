@@ -83,7 +83,7 @@ object BatchSession extends Logging {
       request.executorMemory.foreach(builder.executorMemory)
       request.executorCores.foreach(builder.executorCores)
       request.numExecutors.foreach(builder.numExecutors)
-      request.queue.foreach(builder.queue)
+      request.queue.orElse(livyConf.getYarnQueue()).foreach(builder.queue)
       request.name.foreach(builder.name)
 
       sessionStore.save(BatchSession.RECOVERY_SESSION_TYPE, s.recoveryMetadata)
@@ -120,6 +120,7 @@ object BatchSession extends Logging {
       owner,
       impersonatedUser,
       sessionStore,
+      request.queue.orElse(livyConf.getYarnQueue()),
       mockApp.map { m => (_: BatchSession) => m }.getOrElse(createSparkApp))
   }
 
@@ -137,6 +138,7 @@ object BatchSession extends Logging {
       m.owner,
       m.proxyUser,
       sessionStore,
+      None,
       mockApp.map { m => (_: BatchSession) => m }.getOrElse { s =>
         SparkApp.create(m.appTag, m.appId, None, livyConf, Option(s))
       })
@@ -152,6 +154,7 @@ class BatchSession(
     owner: String,
     override val proxyUser: Option[String],
     sessionStore: SessionStore,
+    val queue: Option[String],
     sparkApp: BatchSession => SparkApp)
   extends Session(id, name, owner, livyConf) with SparkAppListener {
   import BatchSession._

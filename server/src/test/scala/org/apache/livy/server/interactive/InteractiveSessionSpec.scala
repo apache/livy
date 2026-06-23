@@ -322,4 +322,71 @@ class InteractiveSessionSpec extends FunSpec
       s.logLines().mkString should include("RSCDriver URI is unknown")
     }
   }
+
+  describe("InteractiveSession") {
+    it("should inherit the default YARN queue from LivyConf when request queue is empty") {
+      // Create a clean instance of LivyConf for this isolated check
+      val testLivyConf = new LivyConf()
+        .set(LivyConf.REPL_JARS, "dummy.jar")
+        .set(LivyConf.SPARK_YARN_QUEUE, "livy-default-queue")
+
+      val req = new CreateInteractiveRequest()
+      req.kind = Spark
+      req.queue = None // Explicitly empty
+      req.conf = Map(RSCConf.Entry.LIVY_JARS.key() -> "")
+
+      // Create a mock RSCClient to avoid spawning a real background spark-submit process
+      val mockClient = Some(mock[RSCClient])
+
+      val s = InteractiveSession.create(
+        id = 101,
+        name = None,
+        owner = "systest",
+        proxyUser = None,
+        livyConf = testLivyConf,
+        accessManager = accessManager,
+        request = req,
+        sessionStore = mock[SessionStore],
+        ttl = None,
+        idleTimeout = None,
+        mockApp = None,
+        mockClient = mockClient
+      )
+
+      // Verify that the internal session state correctly holds the fallback queue string
+      s.queue shouldBe Some("livy-default-queue")
+    }
+
+    it("should prioritize user-specified request queue over LivyConf global configuration") {
+      val testLivyConf = new LivyConf()
+        .set(LivyConf.REPL_JARS, "dummy.jar")
+        .set(LivyConf.SPARK_YARN_QUEUE, "livy-default-queue")
+
+      val req = new CreateInteractiveRequest()
+      req.kind = Spark
+      req.queue = Some("user-custom-queue") // Explicitly provided by request
+      req.conf = Map(RSCConf.Entry.LIVY_JARS.key() -> "")
+
+      val mockClient = Some(mock[RSCClient])
+
+      val s = InteractiveSession.create(
+        id = 102,
+        name = None,
+        owner = "systest",
+        proxyUser = None,
+        livyConf = testLivyConf,
+        accessManager = accessManager,
+        request = req,
+        sessionStore = mock[SessionStore],
+        ttl = None,
+        idleTimeout = None,
+        mockApp = None,
+        mockClient = mockClient
+      )
+
+      // Verify that user context takes absolute priority over fallback definitions
+      s.queue shouldBe Some("user-custom-queue")
+    }
+
+  }
 }
