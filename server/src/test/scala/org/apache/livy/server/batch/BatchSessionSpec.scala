@@ -138,6 +138,83 @@ class BatchSessionSpec
       }) should be (true)
     }
 
+    it("should inherit the default YARN queue from LivyConf when request queue is empty") {
+      val req = new CreateBatchRequest()
+      req.file = script.toString
+      req.queue = None // Explicitly empty
+      req.conf = Map("spark.driver.extraClassPath" -> sys.props("java.class.path"))
+
+      // Set default queue in LivyConf configuration
+      val conf = new LivyConf()
+        .set(LivyConf.LOCAL_FS_WHITELIST, sys.props("java.io.tmpdir"))
+        .set(LivyConf.SPARK_YARN_QUEUE, "livy-default-batch-queue")
+
+      val accessManager = new AccessManager(conf)
+      val mockApp = mock[SparkApp]
+
+      val batch = BatchSession.create(
+        id = 10,
+        name = None,
+        request = req,
+        livyConf = conf,
+        accessManager = accessManager,
+        owner = null,
+        proxyUser = None,
+        sessionStore = sessionStore,
+        mockApp = Some(mockApp)
+      )
+
+      // Verify that the batch session structure captured the fallback queue configuration
+      batch.queue shouldBe Some("livy-default-batch-queue")
+    }
+
+    it("should prioritize user-specified request queue over LivyConf configuration") {
+      val req = new CreateBatchRequest()
+      req.file = script.toString
+      req.queue = Some("user-custom-batch-queue") // Explicitly requested by user
+      req.conf = Map("spark.driver.extraClassPath" -> sys.props("java.class.path"))
+
+      val conf = new LivyConf()
+        .set(LivyConf.LOCAL_FS_WHITELIST, sys.props("java.io.tmpdir"))
+        .set(LivyConf.SPARK_YARN_QUEUE, "livy-default-batch-queue")
+
+      val accessManager = new AccessManager(conf)
+      val mockApp = mock[SparkApp]
+
+      val batch = BatchSession.create(
+        id = 20,
+        name = None,
+        request = req,
+        livyConf = conf,
+        accessManager = accessManager,
+        owner = null,
+        proxyUser = None,
+        sessionStore = sessionStore,
+        mockApp = Some(mockApp)
+      )
+
+      // Verify user context takes absolute priority over fallback definition
+      batch.queue shouldBe Some("user-custom-batch-queue")
+    }
+
+    it("should populate the default YARN queue configuration during session recovery") {
+      val conf = new LivyConf().set(LivyConf.SPARK_YARN_QUEUE, "livy-recovered-batch-queue")
+      val mockApp = mock[SparkApp]
+      val metadata = BatchRecoveryMetadata(
+        id = 99,
+        name = Some("Recovery Queue Test"),
+        appId = None,
+        appTag = "livy-batch-99-abc",
+        owner = "systest",
+        proxyUser = None
+      )
+
+      val batch = BatchSession.recover(metadata, conf, sessionStore, Some(mockApp))
+
+      // Verify that the recovered session has populated its queue with the configuration fallback
+      batch.queue shouldBe Some("livy-recovered-batch-queue")
+    }
+
     def testRecoverSession(name: Option[String]): Unit = {
       val conf = new LivyConf()
       val req = new CreateBatchRequest()
