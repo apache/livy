@@ -47,6 +47,10 @@
 # What spark deploy mode Livy sessions should use.
 # livy.spark.deploy-mode =
 
+# What default YARN queue Livy sessions should use if not specified in the client request.
+# By default, it is null and falls back to the global Hadoop cluster default queue.
+# livy.spark.yarn.queue = default
+
 # Configure Livy server http request and response header size.
 # livy.server.request-header.size = 131072
 # livy.server.response-header.size = 131072

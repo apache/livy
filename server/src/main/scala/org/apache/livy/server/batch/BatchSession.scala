@@ -40,7 +40,7 @@ case class BatchRecoveryMetadata(
     appTag: String,
     owner: String,
     proxyUser: Option[String],
-    queue: Option[String] = None,
+    queue: Option[String],
     version: Int = 1)
   extends RecoveryMetadata
 

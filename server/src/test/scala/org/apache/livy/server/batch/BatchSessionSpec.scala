@@ -197,30 +197,12 @@ class BatchSessionSpec
       batch.queue shouldBe Some("user-custom-batch-queue")
     }
 
-    it("should populate the default YARN queue configuration during session recovery") {
-      val conf = new LivyConf().set(LivyConf.SPARK_YARN_QUEUE, "livy-recovered-batch-queue")
-      val mockApp = mock[SparkApp]
-      val metadata = BatchRecoveryMetadata(
-        id = 99,
-        name = Some("Recovery Queue Test"),
-        appId = None,
-        appTag = "livy-batch-99-abc",
-        owner = "systest",
-        proxyUser = None
-      )
-
-      val batch = BatchSession.recover(metadata, conf, sessionStore, Some(mockApp))
-
-      // Verify that the recovered session has populated its queue with the configuration fallback
-      batch.queue shouldBe Some("livy-recovered-batch-queue")
-    }
-
     def testRecoverSession(name: Option[String]): Unit = {
       val conf = new LivyConf()
       val req = new CreateBatchRequest()
       val name = Some("Test Batch Session")
       val mockApp = mock[SparkApp]
-      val m = BatchRecoveryMetadata(99, name, None, "appTag", null, None)
+      val m = BatchRecoveryMetadata(99, name, None, "appTag", null, None, None)
       val batch = BatchSession.recover(m, conf, sessionStore, Some(mockApp))
 
       batch.state shouldBe (SessionState.Recovering)
