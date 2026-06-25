@@ -40,7 +40,6 @@ case class BatchRecoveryMetadata(
     appTag: String,
     owner: String,
     proxyUser: Option[String],
-    queue: Option[String],
     version: Int = 1)
   extends RecoveryMetadata
 
@@ -139,7 +138,7 @@ object BatchSession extends Logging {
       m.owner,
       m.proxyUser,
       sessionStore,
-      m.queue,
+      None,
       mockApp.map { m => (_: BatchSession) => m }.getOrElse { s =>
         SparkApp.create(m.appTag, m.appId, None, livyConf, Option(s))
       })
@@ -208,5 +207,5 @@ class BatchSession(
   override def infoChanged(appInfo: AppInfo): Unit = { this.appInfo = appInfo }
 
   override def recoveryMetadata: RecoveryMetadata =
-    BatchRecoveryMetadata(id, name, appId, appTag, owner, proxyUser, queue)
+    BatchRecoveryMetadata(id, name, appId, appTag, owner, proxyUser)
 }

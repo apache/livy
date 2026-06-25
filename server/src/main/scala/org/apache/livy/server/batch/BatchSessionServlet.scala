@@ -33,7 +33,6 @@ case class BatchSessionView(
   state: String,
   appId: Option[String],
   appInfo: AppInfo,
-  queue: Option[String],
   log: Seq[String])
 
 class BatchSessionServlet(
@@ -77,7 +76,7 @@ class BatchSessionServlet(
         Nil
       }
     BatchSessionView(session.id, session.name, session.owner, session.proxyUser,
-      session.state.toString, session.appId, session.appInfo, session.queue, logs)
+      session.state.toString, session.appId, session.appInfo, logs)
   }
 
 }
