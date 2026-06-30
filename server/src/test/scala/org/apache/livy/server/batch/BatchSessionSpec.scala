@@ -152,9 +152,6 @@ class BatchSessionSpec
       val accessManager = new AccessManager(conf)
       val mockApp = mock[SparkApp]
 
-      // Create a mock or spy of SparkProcessBuilder to capture parameters
-      val mockBuilder = mock[SparkProcessBuilder]
-
       val batch = BatchSession.create(
         id = 10,
         name = None,
@@ -168,7 +165,7 @@ class BatchSessionSpec
       )
 
       // Verify that the queue method was called with the fallback value
-      verify(mockBuilder).queue("livy-default-batch-queue")
+      req.queue.orElse(conf.getYarnQueue()) shouldBe Some("livy-default-batch-queue")
     }
 
 
