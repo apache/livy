@@ -83,7 +83,7 @@ object BatchSession extends Logging {
       request.executorMemory.foreach(builder.executorMemory)
       request.executorCores.foreach(builder.executorCores)
       request.numExecutors.foreach(builder.numExecutors)
-      request.queue.foreach(builder.queue)
+      request.queue.orElse(livyConf.getYarnQueue()).foreach(builder.queue)
       request.name.foreach(builder.name)
 
       sessionStore.save(BatchSession.RECOVERY_SESSION_TYPE, s.recoveryMetadata)

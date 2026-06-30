@@ -41,6 +41,7 @@ object LivyConf {
 
   val TEST_MODE = ClientConf.TEST_MODE
 
+  val SPARK_YARN_QUEUE = Entry("livy.spark.yarn.queue", null)
   val SPARK_HOME = Entry("livy.server.spark-home", null)
   val LIVY_SPARK_MASTER = Entry("livy.spark.master", "local")
   val LIVY_SPARK_DEPLOY_MODE = Entry("livy.spark.deploy-mode", null)
@@ -484,6 +485,9 @@ class LivyConf(loadDefaults: Boolean) extends ClientConf[LivyConf](null) {
 
   /** Return the spark master Livy sessions should use. */
   def sparkMaster(): String = get(LIVY_SPARK_MASTER)
+
+  /** Return the value of spark yarn queue. */
+  def getYarnQueue(): Option[String] = Option(get(SPARK_YARN_QUEUE))
 
   /** Return the path to the spark-submit executable. */
   def sparkSubmit(): String = {
