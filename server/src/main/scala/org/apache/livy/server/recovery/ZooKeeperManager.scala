@@ -169,7 +169,7 @@ class ZooKeeperManager(
     if (curatorClient.checkExists().forPath(key) == null) {
       Seq.empty[String]
     } else {
-      curatorClient.getChildren.forPath(key).asScala
+      curatorClient.getChildren.forPath(key).asScala.toSeq
     }
   }
 

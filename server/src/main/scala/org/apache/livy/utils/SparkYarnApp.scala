@@ -18,7 +18,6 @@ package org.apache.livy.utils
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -139,8 +138,8 @@ class SparkYarnApp private[utils] (
   private var yarnDiagnostics: IndexedSeq[String] = IndexedSeq.empty[String]
 
   override def log(): IndexedSeq[String] =
-    ("stdout: " +: process.map(_.inputLines).getOrElse(ArrayBuffer.empty[String])) ++
-    ("\nstderr: " +: process.map(_.errorLines).getOrElse(ArrayBuffer.empty[String])) ++
+    ("stdout: " +: process.map(_.inputLines).getOrElse(IndexedSeq.empty[String])) ++
+    ("\nstderr: " +: process.map(_.errorLines).getOrElse(IndexedSeq.empty[String])) ++
     ("\nYARN Diagnostics: " +: yarnDiagnostics)
 
   override def kill(): Unit = synchronized {
@@ -344,11 +343,11 @@ class SparkYarnApp private[utils] (
       debug(s"$appId $state ${yarnDiagnostics.mkString(" ")}")
     } catch {
       case _: InterruptedException =>
-        yarnDiagnostics = ArrayBuffer("Session stopped by user.")
+        yarnDiagnostics = IndexedSeq("Session stopped by user.")
         changeState(SparkApp.State.KILLED)
       case NonFatal(e) =>
         error(s"Error whiling refreshing YARN state", e)
-        yarnDiagnostics = ArrayBuffer(e.getMessage)
+        yarnDiagnostics = IndexedSeq(e.getMessage)
         changeState(SparkApp.State.FAILED)
     }
   }
