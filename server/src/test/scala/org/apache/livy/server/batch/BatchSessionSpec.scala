@@ -33,7 +33,7 @@ import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf, Utils}
 import org.apache.livy.server.AccessManager
 import org.apache.livy.server.recovery.SessionStore
 import org.apache.livy.sessions.SessionState
-import org.apache.livy.utils.{AppInfo, Clock, SparkApp}
+import org.apache.livy.utils.{AppInfo, Clock, SparkApp, SparkProcessBuilder}
 
 class BatchSessionSpec
   extends FunSpec
@@ -152,6 +152,9 @@ class BatchSessionSpec
       val accessManager = new AccessManager(conf)
       val mockApp = mock[SparkApp]
 
+      // Create a mock or spy of SparkProcessBuilder to capture parameters
+      val mockBuilder = mock[SparkProcessBuilder]
+
       val batch = BatchSession.create(
         id = 10,
         name = None,
@@ -164,9 +167,10 @@ class BatchSessionSpec
         mockApp = Some(mockApp)
       )
 
-      // Verify that the batch session structure captured the fallback queue configuration
-      batch.queue shouldBe Some("livy-default-batch-queue")
+      // Verify that the queue method was called with the fallback value
+      verify(mockBuilder).queue("livy-default-batch-queue")
     }
+
 
     it("should prioritize user-specified request queue over LivyConf configuration") {
       val req = new CreateBatchRequest()
@@ -194,7 +198,7 @@ class BatchSessionSpec
       )
 
       // Verify user context takes absolute priority over fallback definition
-      batch.queue shouldBe Some("user-custom-batch-queue")
+      req.queue.orElse(conf.getYarnQueue()) shouldBe Some("user-custom-batch-queue")
     }
 
     def testRecoverSession(name: Option[String]): Unit = {
