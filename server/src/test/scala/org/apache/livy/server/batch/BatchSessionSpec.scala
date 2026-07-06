@@ -33,7 +33,7 @@ import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf, Utils}
 import org.apache.livy.server.AccessManager
 import org.apache.livy.server.recovery.SessionStore
 import org.apache.livy.sessions.SessionState
-import org.apache.livy.utils.{AppInfo, Clock, SparkApp}
+import org.apache.livy.utils.{AppInfo, Clock, SparkApp, SparkProcessBuilder}
 
 class BatchSessionSpec
   extends FunSpec
@@ -136,6 +136,43 @@ class BatchSessionSpec
         case SessionState.Killed(_) => true
         case _ => false
       }) should be (true)
+    }
+
+    it("should pass default YARN queue to spark-submit when request queue is empty") {
+      val req = new CreateBatchRequest()
+      req.file = script.toString
+      req.queue = None
+      req.conf = Map("spark.driver.extraClassPath" -> sys.props("java.class.path"))
+
+      val conf = new LivyConf()
+        .set(LivyConf.LOCAL_FS_WHITELIST, sys.props("java.io.tmpdir"))
+        .set(LivyConf.SPARK_YARN_QUEUE, "livy-default-batch-queue")
+
+      val accessManager = new AccessManager(conf)
+      val batch = BatchSession.create(10, None, req, conf, accessManager, null, None, sessionStore)
+      batch.start()
+
+      Utils.waitUntil({ () => !batch.state.isActive }, Duration(10, TimeUnit.SECONDS))
+      batch.logLines().mkString should include("livy-default-batch-queue")
+    }
+
+    it("should prioritize user-specified request queue over LivyConf configuration") {
+      val req = new CreateBatchRequest()
+      req.file = script.toString
+      req.queue = Some("user-custom-batch-queue")
+      req.conf = Map("spark.driver.extraClassPath" -> sys.props("java.class.path"))
+
+      val conf = new LivyConf()
+        .set(LivyConf.LOCAL_FS_WHITELIST, sys.props("java.io.tmpdir"))
+        .set(LivyConf.SPARK_YARN_QUEUE, "livy-default-batch-queue")
+
+      val accessManager = new AccessManager(conf)
+      val batch = BatchSession.create(20, None, req, conf, accessManager, null, None, sessionStore)
+      batch.start()
+
+      Utils.waitUntil({ () => !batch.state.isActive }, Duration(10, TimeUnit.SECONDS))
+      batch.logLines().mkString should include("user-custom-batch-queue")
+      batch.logLines().mkString should not include "livy-default-batch-queue"
     }
 
     def testRecoverSession(name: Option[String]): Unit = {

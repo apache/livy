@@ -44,6 +44,7 @@ object LivyConf {
   val SPARK_HOME = Entry("livy.server.spark-home", null)
   val LIVY_SPARK_MASTER = Entry("livy.spark.master", "local")
   val LIVY_SPARK_DEPLOY_MODE = Entry("livy.spark.deploy-mode", null)
+  val SPARK_YARN_QUEUE = Entry("livy.spark.yarn.queue", null)
 
   // Two configurations to specify Spark and related Scala version. These are internal
   // configurations will be set by LivyServer and used in session creation. It is not required to
@@ -484,6 +485,9 @@ class LivyConf(loadDefaults: Boolean) extends ClientConf[LivyConf](null) {
 
   /** Return the spark master Livy sessions should use. */
   def sparkMaster(): String = get(LIVY_SPARK_MASTER)
+
+  /** Return the default YARN queue Livy sessions should use. */
+  def sparkYarnQueue(): Option[String] = Option(get(SPARK_YARN_QUEUE)).filterNot(_.isEmpty)
 
   /** Return the path to the spark-submit executable. */
   def sparkSubmit(): String = {
