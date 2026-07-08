@@ -337,18 +337,8 @@ class InteractiveSessionSpec extends FunSpec
       val mockClient = Some(mock[RSCClient])
 
       val s = InteractiveSession.create(
-        id = 101,
-        name = None,
-        owner = "systest",
-        proxyUser = None,
-        livyConf = testLivyConf,
-        accessManager = accessManager,
-        request = req,
-        sessionStore = mock[SessionStore],
-        ttl = None,
-        idleTimeout = None,
-        mockApp = None,
-        mockClient = mockClient
+        101, None, "systest", None, testLivyConf, accessManager,
+        req, mock[SessionStore], None, None, None, mockClient
       )
 
       s.queue shouldBe Some("livy-default-queue")
@@ -367,21 +357,29 @@ class InteractiveSessionSpec extends FunSpec
       val mockClient = Some(mock[RSCClient])
 
       val s = InteractiveSession.create(
-        id = 102,
-        name = None,
-        owner = "systest",
-        proxyUser = None,
-        livyConf = testLivyConf,
-        accessManager = accessManager,
-        request = req,
-        sessionStore = mock[SessionStore],
-        ttl = None,
-        idleTimeout = None,
-        mockApp = None,
-        mockClient = mockClient
+        102, None, "systest", None, testLivyConf, accessManager,
+        req, mock[SessionStore], None, None, None, mockClient
       )
 
       s.queue shouldBe Some("user-custom-queue")
+    }
+
+    it("should inherit default YARN queue when request queue is empty string") {
+      val testLivyConf = new LivyConf()
+        .set(LivyConf.REPL_JARS, "dummy.jar")
+        .set(LivyConf.SPARK_YARN_QUEUE, "livy-default-queue")
+
+      val req = new CreateInteractiveRequest()
+      req.kind = Spark
+      req.queue = Some("")   // explicitly empty string
+      req.conf = Map(RSCConf.Entry.LIVY_JARS.key() -> "")
+
+      val s = InteractiveSession.create(
+        103, None, "systest", None, testLivyConf, accessManager,
+        req, mock[SessionStore], None, None, None, Some(mock[RSCClient])
+      )
+
+      s.queue shouldBe Some("livy-default-queue")
     }
   }
 }
