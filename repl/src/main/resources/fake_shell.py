@@ -15,7 +15,6 @@
 # limitations under the License.
 #
 
-from __future__ import print_function
 import ast
 from collections import OrderedDict
 import datetime
@@ -32,13 +31,6 @@ import threading
 import tempfile
 import shutil
 import pickle
-import textwrap
-
-if sys.version >= '3':
-    unicode = str
-else:
-    import cStringIO
-    import StringIO
 
 if sys.version_info > (3,8):
     from ast import Module
@@ -66,30 +58,24 @@ def execute_reply(status, content):
         )
     }
 
-
 def execute_reply_ok(data):
     return execute_reply('ok', {
         'data': data,
     })
 
-
 def execute_reply_error(exc_type, exc_value, tb):
     LOG.error('execute_reply', exc_info=True)
-    if sys.version >= '3':
-      formatted_tb = traceback.format_exception(exc_type, exc_value, tb, chain=False)
-    else:
-      formatted_tb = traceback.format_exception(exc_type, exc_value, tb)
+    formatted_tb = traceback.format_exception(exc_type, exc_value, tb, chain=False)
     for i in range(len(formatted_tb)):
         if TOP_FRAME_REGEX.match(formatted_tb[i]):
             formatted_tb = formatted_tb[:1] + formatted_tb[i + 1:]
             break
 
     return execute_reply('error', {
-        'ename': unicode(exc_type.__name__),
-        'evalue': unicode(exc_value),
+        'ename': str(exc_type.__name__),
+        'evalue': str(exc_value),
         'traceback': formatted_tb,
     })
-
 
 def execute_reply_internal_error(message, exc_info=None):
     LOG.error('execute_reply_internal_error', exc_info=exc_info)
@@ -98,7 +84,6 @@ def execute_reply_internal_error(message, exc_info=None):
         'evalue': message,
         'traceback': [],
     })
-
 
 class JobContextImpl(object):
     def __init__(self):
@@ -185,14 +170,10 @@ class JobContextImpl(object):
             except:
                 pass
 
-
 class PySparkJobProcessorImpl(object):
     def processBypassJob(self, serialized_job):
         try:
-            if sys.version >= '3':
-                deserialized_job = pickle.loads(serialized_job, encoding="bytes")
-            else:
-                deserialized_job = pickle.loads(serialized_job)
+            deserialized_job = pickle.loads(serialized_job, encoding="bytes")
             result = deserialized_job(job_context)
             serialized_result = global_dict['cloudpickle'].dumps(result)
             response = bytearray(base64.b64encode(serialized_result))
@@ -209,14 +190,12 @@ class PySparkJobProcessorImpl(object):
     def getLocalTmpDirPath(self):
         return os.path.join(job_context.get_local_tmp_dir_path(), '__livy__')
 
-    class Scala:
+    class Scala(object):
         extends = ['org.apache.livy.repl.PySparkJobProcessor']
-
 
 class ExecutionError(Exception):
     def __init__(self, exc_info):
         self.exc_info = exc_info
-
 
 class NormalNode(object):
     def __init__(self, code):
@@ -240,10 +219,8 @@ class NormalNode(object):
             # code and passing the error along.
             raise ExecutionError(sys.exc_info())
 
-
 class UnknownMagic(Exception):
     pass
-
 
 class MagicNode(object):
     def __init__(self, line):
@@ -263,7 +240,6 @@ class MagicNode(object):
             raise UnknownMagic("unknown magic command '%s'" % self.magic)
 
         return handler(*self.rest)
-
 
 def parse_code_into_nodes(code):
     nodes = []
@@ -303,7 +279,6 @@ def parse_code_into_nodes(code):
                 nodes.append(NormalNode(chunk))
 
     return nodes
-
 
 def execute_request(content):
     try:
@@ -354,7 +329,6 @@ def execute_request(content):
 
     return execute_reply_ok(result)
 
-
 def magic_table_convert(value):
     try:
         converter = magic_table_types[type(value)]
@@ -362,7 +336,6 @@ def magic_table_convert(value):
         converter = magic_table_types[str]
 
     return converter(value)
-
 
 def magic_table_convert_seq(items):
     last_item_type = None
@@ -379,7 +352,6 @@ def magic_table_convert_seq(items):
         converted_items.append(item)
 
     return 'ARRAY_TYPE', converted_items
-
 
 def magic_table_convert_map(m):
     last_key_type = None
@@ -404,7 +376,6 @@ def magic_table_convert_map(m):
 
     return 'MAP_TYPE', converted_items
 
-
 magic_table_types = {
     type(None): lambda x: ('NULL_TYPE', x),
     bool: lambda x: ('BOOLEAN_TYPE', x),
@@ -418,15 +389,6 @@ magic_table_types = {
     list: magic_table_convert_seq,
     dict: magic_table_convert_map,
 }
-
-# python 2.x only
-if sys.version < '3':
-    magic_table_types.update({
-        long: lambda x: ('BIGINT_TYPE', x),
-        unicode: lambda x: ('STRING_TYPE', x.encode('utf-8'))
-    })
-
-
 
 def magic_table(name):
     try:
@@ -444,7 +406,7 @@ def magic_table(name):
     for row in value:
         cols = []
         data.append(cols)
-        
+
         if 'Row' == row.__class__.__name__:
             row = row.asDict()
 
@@ -488,7 +450,6 @@ def magic_table(name):
         }
     }
 
-
 def magic_json(name):
     try:
         value = global_dict[name]
@@ -507,9 +468,7 @@ def magic_matplot(name):
         imgdata = io.BytesIO()
         fig.savefig(imgdata, format='png')
         imgdata.seek(0)
-        encode = base64.b64encode(imgdata.getvalue())
-        if sys.version >= '3':
-            encode = encode.decode()
+        encode = base64.b64encode(imgdata.getvalue()).decode()
 
     except:
         exc_type, exc_value, tb = sys.exc_info()
@@ -522,7 +481,6 @@ def magic_matplot(name):
 
 def shutdown_request(_content):
     sys.exit()
-
 
 magic_router = {
     'table': magic_table,
@@ -541,24 +499,18 @@ class UnicodeDecodingStringIO(io.StringIO):
             s = s.decode("utf-8")
         super(UnicodeDecodingStringIO, self).write(s)
 
-
 def clearOutputs():
     sys.stdout.close()
     sys.stderr.close()
     sys.stdout = UnicodeDecodingStringIO()
     sys.stderr = UnicodeDecodingStringIO()
 
-
 def main():
     sys_stdin = sys.stdin
     sys_stdout = sys.stdout
     sys_stderr = sys.stderr
 
-    if sys.version >= '3':
-        sys.stdin = io.StringIO()
-    else:
-        sys.stdin = cStringIO.StringIO()
-
+    sys.stdin = io.StringIO()
     sys.stdout = UnicodeDecodingStringIO()
     sys.stderr = UnicodeDecodingStringIO()
 
@@ -574,6 +526,7 @@ def main():
             from py4j.java_gateway import java_import, JavaGateway, GatewayClient
             from pyspark.conf import SparkConf
             from pyspark.context import SparkContext
+            from pyspark import SparkFiles
             from pyspark.sql import SQLContext, HiveContext, Row
             # Connect to the gateway
             gateway_port = int(os.environ["PYSPARK_GATEWAY_PORT"])
@@ -599,34 +552,18 @@ def main():
 
             jsc = gateway.entry_point.sc()
             jconf = gateway.entry_point.sc().getConf()
-            jsqlc = gateway.entry_point.hivectx() if gateway.entry_point.hivectx() is not None \
-                else gateway.entry_point.sqlctx()
 
             conf = SparkConf(_jvm = gateway.jvm, _jconf = jconf)
             sc = SparkContext(jsc=jsc, gateway=gateway, conf=conf)
             global_dict['sc'] = sc
 
-            if spark_major_version >= "2":
-                from pyspark.sql import SparkSession
-                spark_session = SparkSession(sc, gateway.entry_point.sparkSession())
-                sqlc = SQLContext(sc, spark_session, jsqlc)
-                global_dict['sqlContext'] = sqlc
-                global_dict['spark'] = spark_session
-            else:
-                sqlc = SQLContext(sc, jsqlc)
-                global_dict['sqlContext'] = sqlc
-
-                # LIVY-294, need to check whether HiveContext can work properly,
-                # fallback to SQLContext if HiveContext can not be initialized successfully.
-                # Only for spark-1.
-                code = textwrap.dedent("""
-                    import py4j
-                    from pyspark.sql import SQLContext
-                    try:
-                      sqlContext.tables()
-                    except py4j.protocol.Py4JError:
-                      sqlContext = SQLContext(sc)""")
-                exec(code, global_dict)
+            from pyspark.sql import SparkSession
+            spark_session = SparkSession(sc, gateway.entry_point.sparkSession())
+            sqlc = SQLContext.getOrCreate(sc)
+            global_dict['sqlContext'] = sqlc
+            global_dict['spark'] = spark_session
+            root_dir = SparkFiles.getRootDirectory()
+            os.chdir(root_dir)
 
             #Start py4j callback server
             from py4j.protocol import ENTRY_POINT_OBJECT_ID

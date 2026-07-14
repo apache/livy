@@ -47,6 +47,10 @@
 # What spark deploy mode Livy sessions should use.
 # livy.spark.deploy-mode =
 
+# What default YARN queue Livy sessions should use if not specified in the client request.
+# By default, it is null and falls back to the global Hadoop cluster default queue.
+# livy.spark.yarn.queue = default
+
 # Configure Livy server http request and response header size.
 # livy.server.request-header.size = 131072
 # livy.server.response-header.size = 131072
@@ -66,6 +70,13 @@
 #
 # How long a finished session state should be kept in LivyServer for query.
 # livy.server.session.state-retain.sec = 600s
+
+# Enabled to check whether TTL Livy sessions should be stopped.
+# livy.server.session.ttl-check = false
+
+# Time in milliseconds on how long Livy will wait before TTL is an inactive session.
+# Note that the inactive session could be busy running jobs.
+# livy.server.session.ttl = 8h
 
 # If livy should impersonate the requesting users when creating a new session.
 # livy.impersonation.enabled = false
@@ -158,6 +169,21 @@
 
 # The dir in zk to store the data about session.
 # livy.server.recovery.zk-state-store.key-prefix = livy
+
+# Enable SASL authentication for ZooKeeper connections.
+# livy.server.zk.sasl.enabled = false
+
+# JAAS login context name for ZooKeeper SASL authentication.
+# livy.server.zk.sasl.login-context = Client
+
+# The SSL configuration for zookeeper. When livy.server.zk.client.secure=true, the following
+# are required: livy.keystore, livy.server.zk.ssl.keyStore.password,
+# livy.server.zk.ssl.truststore.location, livy.server.zk.ssl.truststore.password.
+# livy.server.zk.client.secure=false
+# livy.server.zk.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty
+# livy.server.zk.ssl.keyStore.password=
+# livy.server.zk.ssl.truststore.location=
+# livy.server.zk.ssl.truststore.password=
 
 # If Livy can't find the yarn app within this time, consider it lost.
 # livy.server.yarn.app-lookup-timeout = 120s

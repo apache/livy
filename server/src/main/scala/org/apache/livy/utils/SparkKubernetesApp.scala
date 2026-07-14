@@ -31,7 +31,7 @@ import scala.util.control.NonFatal
 import io.fabric8.kubernetes.api.model._
 import io.fabric8.kubernetes.api.model.networking.v1.{Ingress, IngressBuilder}
 import io.fabric8.kubernetes.client.{Config, ConfigBuilder, _}
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.livy.{LivyConf, Logging}
 
@@ -90,7 +90,7 @@ object SparkKubernetesApp extends Logging {
         var newAccessToken = new String
         val newestConfig = Config.autoConfigure(currentContextName)
         newAccessToken = newestConfig.getOauthToken
-        info(s"Refresh a new token ${newAccessToken}")
+        info("Refreshed Kubernetes service account token.")
 
         config.setOauthToken(newAccessToken)
         kubernetesClient = new DefaultKubernetesClient(config)

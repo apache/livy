@@ -15,7 +15,10 @@
 # limitations under the License.
 #
 name: Unit Tests
-on: [push]
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, synchronize]
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
   MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3
@@ -27,14 +30,15 @@ jobs:
     strategy:
       matrix:
         maven_profile:
-        - "-Pscala-2.11 -Pspark2"
-        - "-Pscala-2.12 -Pspark2"
         - "-Pscala-2.12 -Pspark3"
+        jdk_path:
+        - "/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java"
+        - "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
     steps:
-    - 
+    -
       name: Checkout
       uses: actions/checkout@v3
-    - 
+    -
       name: Cache local Maven repository
       uses: actions/cache@v3
       with:
@@ -44,7 +48,10 @@ jobs:
         key: ${{ runner.os }}-maven-${{ hashFiles('pom.xml', '*/pom.xml', 'thriftserver/*/pom.xml', 'core/*/pom.xml', 'repl/*/pom.xml', 'scala-api/*/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-maven-
-    - 
+    -
+      name: Set JDK version
+      run: update-alternatives --set java ${{ matrix.jdk_path }}
+    -
       name: Build with Maven
       run: mvn -Pthriftserver ${{ matrix.maven_profile }} -DskipITs -Dmaven.javadoc.skip=true -B -V -e verify
     -

@@ -44,6 +44,7 @@ object LivyConf {
   val SPARK_HOME = Entry("livy.server.spark-home", null)
   val LIVY_SPARK_MASTER = Entry("livy.spark.master", "local")
   val LIVY_SPARK_DEPLOY_MODE = Entry("livy.spark.deploy-mode", null)
+  val SPARK_YARN_QUEUE = Entry("livy.spark.yarn.queue", null)
 
   // Two configurations to specify Spark and related Scala version. These are internal
   // configurations will be set by LivyServer and used in session creation. It is not required to
@@ -245,6 +246,10 @@ object LivyConf {
    */
   val ZK_RETRY_POLICY = Entry("livy.server.zk.retry-policy", null)
 
+  val ZK_SASL_ENABLED = Entry("livy.server.zk.sasl.enabled", false)
+
+  val ZK_SASL_LOGIN_CONTEXT = Entry("livy.server.zk.sasl.login-context", "Client")
+
   // The dir in zookeeper to store the data about session.
   val RECOVERY_ZK_STATE_STORE_KEY_PREFIX =
     Entry("livy.server.recovery.zk-state-store.key-prefix", "livy")
@@ -354,7 +359,21 @@ object LivyConf {
   // Max creating session in livyServer
   val SESSION_MAX_CREATION = Entry("livy.server.session.max-creation", 100)
 
+  // Enabled to check whether TTL Livy sessions should be stopped.
+  val SESSION_TTL_CHECK = Entry("livy.server.session.ttl-check", false)
+
+  // Time in milliseconds on how long Livy will wait before TTL is an inactive session.
+  // Note that the inactive session could be busy running jobs.
+  val SESSION_TTL = Entry("livy.server.session.ttl", "8h")
+
   val SESSION_ALLOW_CUSTOM_CLASSPATH = Entry("livy.server.session.allow-custom-classpath", false)
+
+  val LIVY_ZK_CLIENT_SOCKET = Entry("livy.server.zk.clientCnxnSocket",
+    "org.apache.zookeeper.ClientCnxnSocketNetty")
+  val LIVY_ZK_KEYSTORE_PASS = Entry("livy.server.zk.ssl.keyStore.password", null)
+  val LIVY_ZK_TRUSTSTORE_FILE = Entry("livy.server.zk.ssl.truststore.location", null)
+  val LIVY_ZK_TRUSTSTORE_PASS = Entry("livy.server.zk.ssl.truststore.password", null)
+  val LIVY_ZK_CLIENT_SECURE = Entry("livy.server.zk.client.secure", false)
 
   val SPARK_MASTER = "spark.master"
   val SPARK_DEPLOY_MODE = "spark.submit.deployMode"
@@ -379,6 +398,7 @@ object LivyConf {
     SPARK_FILES,
     SPARK_ARCHIVES,
     SPARK_PY_FILES,
+    "spark.archives",
     "spark.yarn.archive",
     "spark.yarn.dist.files",
     "spark.yarn.dist.jars",
@@ -465,6 +485,9 @@ class LivyConf(loadDefaults: Boolean) extends ClientConf[LivyConf](null) {
 
   /** Return the spark master Livy sessions should use. */
   def sparkMaster(): String = get(LIVY_SPARK_MASTER)
+
+  /** Return the default YARN queue Livy sessions should use. */
+  def sparkYarnQueue(): Option[String] = Option(get(SPARK_YARN_QUEUE)).filterNot(_.isEmpty)
 
   /** Return the path to the spark-submit executable. */
   def sparkSubmit(): String = {

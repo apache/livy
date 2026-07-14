@@ -22,11 +22,11 @@
 
   <groupId>org.apache.livy</groupId>
   <artifactId>livy-main</artifactId>
-  <version>0.9.0-incubating-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Livy Project Parent POM</name>
   <description>Livy Project</description>
-  <url>http://livy.incubating.apache.org/</url>
+  <url>http://livy.apache.org/</url>
 
   <parent>
     <groupId>org.apache</groupId>
@@ -43,9 +43,9 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:git@github.com:apache/incubator-livy.git</connection>
-    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/incubator-livy.git</developerConnection>
-    <url>scm:git:git@github.com:apache/incubator-livy.git</url>
+    <connection>scm:git:git@github.com:apache/livy.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/livy.git</developerConnection>
+    <url>scm:git:git@github.com:apache/livy.git</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -57,23 +57,23 @@
   <mailingLists>
     <mailingList>
       <name>Dev Mailing List</name>
-      <post>dev@livy.incubating.apache.org</post>
-      <subscribe>dev-subscribe@livy.incubating.apache.org</subscribe>
-      <unsubscribe>dev-unsubscribe@livy.incubating.apache.org</unsubscribe>
+      <post>dev@livy.apache.org</post>
+      <subscribe>dev-subscribe@livy.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@livy.apache.org</unsubscribe>
     </mailingList>
 
     <mailingList>
       <name>User Mailing List</name>
-      <post>user@livy.incubating.apache.org</post>
-      <subscribe>user-subscribe@livy.incubating.apache.org</subscribe>
-      <unsubscribe>user-unsubscribe@livy.incubating.apache.org</unsubscribe>
+      <post>user@livy.apache.org</post>
+      <subscribe>user-subscribe@livy.apache.org</subscribe>
+      <unsubscribe>user-unsubscribe@livy.apache.org</unsubscribe>
     </mailingList>
 
     <mailingList>
       <name>Commits Mailing List</name>
-      <post>commits@livy.incubating.apache.org</post>
-      <subscribe>commits-subscribe@livy.incubating.apache.org</subscribe>
-      <unsubscribe>commits-unsubscribe@livy.incubating.apache.org</unsubscribe>
+      <post>commits@livy.apache.org</post>
+      <subscribe>commits-subscribe@livy.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@livy.apache.org</unsubscribe>
     </mailingList>
   </mailingLists>
 
@@ -81,21 +81,22 @@
     <asynchttpclient.version>2.10.1</asynchttpclient.version>
     <hadoop.scope>compile</hadoop.scope>
     <slf4j.version>1.7.36</slf4j.version>
-    <reload4j.version>1.2.25</reload4j.version>
-    <spark.scala-2.11.version>2.4.5</spark.scala-2.11.version>
-    <spark.scala-2.12.version>2.4.5</spark.scala-2.12.version>
-    <spark.version>${spark.scala-2.11.version}</spark.version>
+    <spark.scala-2.12.version>3.3.4</spark.scala-2.12.version>
+    <spark.version>${spark.scala-2.12.version}</spark.version>
     <kubernetes.client.version>5.6.0</kubernetes.client.version>
     <hive.version>3.0.0</hive.version>
-    <commons-codec.version>1.9</commons-codec.version>
-    <httpclient.version>4.5.13</httpclient.version>
-    <httpcore.version>4.4.4</httpcore.version>
+    <commons-codec.version>1.15</commons-codec.version>
+    <commons-lang3.version>3.17.0</commons-lang3.version>
+    <httpclient.version>4.5.14</httpclient.version>
+    <httpcore.version>4.4.16</httpcore.version>
     <jackson.version>2.12.7</jackson.version>
     <jackson-databind.version>2.12.7.1</jackson-databind.version>
+    <jacoco.version>0.8.13</jacoco.version>
     <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
     <jetty.version>10.0.1</jetty.version>
     <junit.version>4.13.1</junit.version>
     <libthrift.version>0.9.3</libthrift.version>
+    <log4j.version>2.26.0</log4j.version>
     <kryo.version>4.0.2</kryo.version>
     <metrics.version>3.1.0</metrics.version>
     <mockito.version>1.10.19</mockito.version>
@@ -104,18 +105,31 @@
     <scalatest.version>3.0.8</scalatest.version>
     <scalatra.version>2.6.5</scalatra.version>
     <java.version>1.8</java.version>
+    <owasp.version>12.1.9</owasp.version>
+    <extraJavaTestArgs>
+      -XX:+IgnoreUnrecognizedVMOptions
+      --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+      --add-opens=java.base/java.lang=ALL-UNNAMED
+      --add-opens=java.base/java.nio=ALL-UNNAMED
+      --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+      --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+      --add-opens=java.base/java.net=ALL-UNNAMED
+      --add-opens=java.base/java.io=ALL-UNNAMED
+      --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+      --add-exports=java.base/sun.net.dns=ALL-UNNAMED
+      --add-exports=java.base/sun.net.util=ALL-UNNAMED
+      --add-exports=java.base/sun.security.x509=ALL-UNNAMED
+      --add-exports=java.base/sun.security.util=ALL-UNNAMED
+    </extraJavaTestArgs>
     <test.redirectToFile>true</test.redirectToFile>
     <execution.root>${user.dir}</execution.root>
     <spark.home>${execution.root}/dev/spark</spark.home>
     <!-- profile controlled parameters, we are setting the defaults here so we can run "mvn package" with default profile values -->
     <!-- hadoop2 -->
-    <hadoop.major-minor.version>2.7</hadoop.major-minor.version>
+    <hadoop.major-minor.version>2</hadoop.major-minor.version>
     <hadoop.version>2.7.3</hadoop.version>
-    <!-- scala2.11 -->
-    <scala.binary.version>2.11</scala.binary.version>
-    <scala.version>2.11.12</scala.version>
-    <!-- spark2 -->
-    <spark.version>2.4.5</spark.version>
+    <scala.binary.version>2.12</scala.binary.version>
+    <scala.version>2.12.18</scala.version>
     <java.version>1.8</java.version>
     <py4j.version>0.10.9</py4j.version>
     <json4s.version>3.5.3</json4s.version>
@@ -137,8 +151,8 @@
     <apacheds.version>2.0.0.AM26</apacheds.version>
     <ldap-api.version>2.1.2</ldap-api.version>
 
-    <curator.version>2.7.1</curator.version>
-    <zookeeper.version>3.4.6</zookeeper.version>
+    <curator.version>5.9.0</curator.version>
+    <zookeeper.version>3.9.4</zookeeper.version>
 
     <!--
       Properties for the copyright header style checks. Modules that use the ASF header
@@ -176,6 +190,8 @@
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
 
+    <!-- Exclude test and provided licenses when generating the THIRD-PARTY license file -->
+    <license.excludedScopes>test,provided</license.excludedScopes>
   </properties>
 
   <repositories>
@@ -266,9 +282,25 @@
     <dependencies>
 
       <dependency>
-        <groupId>ch.qos.reload4j</groupId>
-        <artifactId>reload4j</artifactId>
-        <version>${reload4j.version}</version>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-slf4j-impl</artifactId>
+        <version>${log4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-api</artifactId>
+        <version>${log4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-core</artifactId>
+        <version>${log4j.version}</version>
+      </dependency>
+      <dependency>
+        <!-- API bridge between log4j 1 and 2 -->
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-1.2-api</artifactId>
+        <version>${log4j.version}</version>
       </dependency>
 
       <dependency>
@@ -305,6 +337,12 @@
         <groupId>commons-codec</groupId>
         <artifactId>commons-codec</artifactId>
         <version>${commons-codec.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang3.version}</version>
       </dependency>
 
       <dependency>
@@ -356,6 +394,14 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
 
@@ -376,6 +422,30 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>javax.xml.stream</groupId>
+            <artifactId>stax-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
 
@@ -393,6 +463,26 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
 
@@ -409,6 +499,62 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>javax.xml.stream</groupId>
+            <artifactId>stax-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-jaxrs</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-xc</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-hdfs</artifactId>
+        <version>${hadoop.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
 
@@ -421,6 +567,22 @@
           <exclusion>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -440,6 +602,54 @@
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
           </exclusion>
+          <exclusion>
+            <groupId>javax.xml.stream</groupId>
+            <artifactId>stax-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-json</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-server</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey.contribs</groupId>
+            <artifactId>jersey-guice</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-xc</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-jaxrs</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+          </exclusion>
         </exclusions>
       </dependency>
 
@@ -458,6 +668,26 @@
           <exclusion>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -494,6 +724,34 @@
           <exclusion>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-jaxrs</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-xc</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -534,6 +792,12 @@
         <groupId>org.apache.spark</groupId>
         <artifactId>spark-repl_${scala.binary.version}</artifactId>
         <version>${spark.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.github.rwl</groupId>
+            <artifactId>jtransforms</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <dependency>
@@ -689,7 +953,7 @@
 
       <dependency>
         <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-reload4j</artifactId>
+        <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
 
@@ -789,7 +1053,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>3.2.1</version>
+          <version>3.5.0</version>
         </plugin>
 
         <plugin>
@@ -814,7 +1078,7 @@
             </systemProperties>
             <redirectTestOutputToFile>${test.redirectToFile}</redirectTestOutputToFile>
             <useFile>${test.redirectToFile}</useFile>
-            <argLine>${argLine} -Xmx2g</argLine>
+            <argLine>${argLine} -Xmx2g ${extraJavaTestArgs}</argLine>
             <failIfNoTests>false</failIfNoTests>
           </configuration>
         </plugin>
@@ -822,7 +1086,7 @@
         <plugin>
           <groupId>org.scalatest</groupId>
           <artifactId>scalatest-maven-plugin</artifactId>
-          <version>2.0.0</version>
+          <version>2.2.0</version>
           <configuration>
             <environmentVariables>
               <LIVY_TEST>true</LIVY_TEST>
@@ -840,12 +1104,13 @@
               <project.version>${project.version}</project.version>
               <skipRTests>${skipRTests}</skipRTests>
               <skipPySpark3Tests>${skipPySpark3Tests}</skipPySpark3Tests>
+              <extraJavaTestArgs>${extraJavaTestArgs}</extraJavaTestArgs>
             </systemProperties>
             <stdout>D</stdout>
             <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
             <junitxml>.</junitxml>
             <filereports>WDF TestSuite.txt</filereports>
-            <argLine>${argLine} -Xmx2g</argLine>
+            <argLine>${argLine} -Xmx2g ${extraJavaTestArgs}</argLine>
           </configuration>
           <executions>
             <execution>
@@ -895,6 +1160,15 @@
     </pluginManagement>
 
     <plugins>
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>${owasp.version}</version>
+        <configuration>
+          <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+          <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -1081,7 +1355,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.2</version>
+        <version>${jacoco.version}</version>
         <executions>
           <execution>
             <goals>
@@ -1111,26 +1385,6 @@
         </executions>
       </plugin>
 
-      <!-- Override this plugin with parent POM to add DISCLAIMER file to artifacts. -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-remote-resources-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>process-resource-bundles</id>
-            <goals>
-              <goal>process</goal>
-            </goals>
-            <configuration>
-              <resourceBundles>
-                <resourceBundle>org.apache:apache-jar-resource-bundle:1.4</resourceBundle>
-                <resourceBundle>org.apache.apache.resources:apache-incubator-disclaimer-resource-bundle:1.2-SNAPSHOT</resourceBundle>
-              </resourceBundles>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
     </plugins>
 
   </build>
@@ -1153,17 +1407,10 @@
       </properties>
     </profile>
     <profile>
-      <id>scala-2.11</id>
-      <properties>
-        <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11.12</scala.version>
-      </properties>
-    </profile>
-    <profile>
       <id>scala-2.12</id>
       <properties>
         <scala.binary.version>2.12</scala.binary.version>
-        <scala.version>2.12.15</scala.version>
+        <scala.version>2.12.18</scala.version>
       </properties>
     </profile>
 
@@ -1175,28 +1422,19 @@
         <module>thriftserver/client</module>
       </modules>
     </profile>
-    <profile>
-      <id>spark2</id>
-      <properties>
-        <spark.version>2.4.5</spark.version>
-        <java.version>1.8</java.version>
-        <py4j.version>0.10.9</py4j.version>
-        <json4s.version>3.5.3</json4s.version>
-        <spark.bin.name>spark-${spark.version}-bin-hadoop${hadoop.major-minor.version}</spark.bin.name>
-        <spark.bin.download.url>
-          https://archive.apache.org/dist/spark/spark-${spark.version}/${spark.bin.name}.tgz
-        </spark.bin.download.url>
-      </properties>
-    </profile>
 
     <profile>
       <id>spark3</id>
       <properties>
-        <spark.version>3.2.3</spark.version>
+        <spark.version>3.5.6</spark.version>
+        <hadoop.major-minor.version>3</hadoop.major-minor.version>
+        <hadoop.version>3.3.4</hadoop.version>
         <java.version>1.8</java.version>
         <py4j.version>0.10.9.7</py4j.version>
         <json4s.version>3.7.0-M11</json4s.version>
-        <netty.version>4.1.92.Final</netty.version>
+        <netty.version>4.1.96.Final</netty.version>
+        <jackson.version>2.15.2</jackson.version>
+        <jackson-databind.version>2.15.2</jackson-databind.version>
         <spark.bin.name>spark-${spark.version}-bin-hadoop${hadoop.major-minor.version}</spark.bin.name>
         <spark.bin.download.url>
           https://archive.apache.org/dist/spark/spark-${spark.version}/${spark.bin.name}.tgz
@@ -1247,6 +1485,10 @@
               <fileTemplate>${execution.root}/dev/third-party-file.ftl</fileTemplate>
               <useMissingFile>true</useMissingFile>
               <missingFile>${execution.root}/dev/third-party-missing-license.properties</missingFile>
+              <licenseMerges>
+                  <licenseMerge>The Apache Software License, Version 2.0|Apache License, Version 2.0|The Apache License, Version 2.0|Apache 2|Apache 2.0 License|Apache License (v2.0)|Apache License 2.0|Apache Software License - Version 2.0|Apache v2|Apache-2.0</licenseMerge>
+                </licenseMerges>
+              <!-- <overrideFile>${execution.root}/dev/third-party-missing-override.properties</overrideFile> -->
             </configuration>
             <executions>
               <execution>

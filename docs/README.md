@@ -61,13 +61,13 @@ NOTE: To skip the step of building and copying over the Scala and Java API docs,
 jekyll build`.
 
 
-## Publishing Docs to [livy.incubator.apache.org]
+## Publishing Docs to [livy.apache.org]
 
 1. Build Livy Docs (`cd docs` then `bundle exec jekyll build`).
 2. Copy the contents of `docs/target/` excluding `assets/` into a new directory (eg. `0.4.0/`) and
-move it into the `docs/` directory in your local fork of `apache/incubator-livy-website`.
+move it into the `docs/` directory in your local fork of `apache/livy-website`.
 3. If nesesary, update the `latest` symlink to point to the new directory.
-4. Open a pull request to `apache/incubator-livy-website` with the update.
+4. Open a pull request to `apache/livy-website` with the update.
 
 Note: If you made any changes to files in the `assets/` directory you will need to replicate those
-changes in the corresponding files in `apache/incubator-livy-website` in the pull request.
+changes in the corresponding files in `apache/livy-website` in the pull request.

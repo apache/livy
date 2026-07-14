@@ -14,22 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# The default Livy logging configuration.
 
-log4j.rootCategory=INFO, console, DRFA
-log4jspark.log.dir=/logs
-log4jspark.log.file=spark-worker.log
+rootLogger.level = info
+rootLogger.appenderRef.stdout.ref = console
+appender.console.type = Console
+appender.console.name = console
+appender.console.target = SYSTEM_ERR
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = %d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
 
-log4j.appender.console=org.apache.log4j.ConsoleAppender
-log4j.appender.console.target=System.err
-log4j.appender.console.layout=org.apache.log4j.PatternLayout
-log4j.appender.console.layout.ConversionPattern=%d %p %c{1} [%t]: %m%n
-
-log4j.appender.DRFA=org.apache.log4j.DailyRollingFileAppender
-log4j.appender.DRFA.File=${log4jspark.log.dir}/${log4jspark.log.file}
-# Rollver at midnight
-log4j.appender.DRFA.DatePattern=.yyyy-MM-dd
-log4j.appender.DRFA.layout=org.apache.log4j.PatternLayout
-# Pattern format: Date LogLevel LoggerName LogMessage
-log4j.appender.DRFA.layout.ConversionPattern=%d %p %c{1} [%t]: %m%n
-
-log4j.logger.org.eclipse.jetty=WARN
+logger.jetty.name = org.eclipse.jetty
+logger.jetty.level = warn

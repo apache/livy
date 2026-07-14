@@ -23,16 +23,13 @@ CLASSIFIERS = [
     'Development Status :: 1 - Planning',
     'Intended Audience :: Developers',
     'Operating System :: OS Independent',
-    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.9',
     'Topic :: Software Development :: Libraries :: Python Modules',
 ]
 
 requirements = [
     'cloudpickle>=0.2.1',
-    'configparser>=3.5.0',
-    'future>=0.15.2',
-    'futures>=3.0.5',
-    'mock~=3.0.5',
     'requests>=2.10.0',
     'responses>=0.5.1',
     'requests-kerberos>=0.11.0',
@@ -40,20 +37,23 @@ requirements = [
 
 setup(
     name='livy-python-api',
-    version="0.9.0-incubating-SNAPSHOT",
+    version="1.0.0-SNAPSHOT",
     packages=["livy", "livy-tests"],
     package_dir={
         "": "src/main/python",
         "livy-tests": "src/test/python/livy-tests",
     },
-    url='https://github.com/apache/incubator-livy',
-    author_email='user@livy.incubator.apache.org',
+    url='https://github.com/apache/livy',
+    author_email='user@livy.apache.org',
     license='Apache License, Version 2.0',
     description=DESCRIPTION,
     platforms=['any'],
     keywords='livy pyspark development',
     classifiers=CLASSIFIERS,
     install_requires=requirements,
+    extras_require={
+        ':python_version == "2.7"': ['futures']
+    },
     setup_requires=['pytest-runner', 'flake8'],
     tests_require=['pytest']
 )

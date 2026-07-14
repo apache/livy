@@ -284,7 +284,7 @@ class SparkYarnAppSpec extends FunSpec with LivyBaseUnitTestSuite {
 
         val mockSparkSubmit = mock[LineBufferedProcess]
         when(mockSparkSubmit.isAlive).thenReturn(false)
-        when(mockSparkSubmit.exitValue).thenReturn(-1)
+        when(mockSparkSubmit.exitValue()).thenReturn(-1)
 
         val listener = new SparkAppListener {
           var nStateChanged = 0
@@ -683,6 +683,31 @@ class SparkYarnAppSpec extends FunSpec with LivyBaseUnitTestSuite {
 
         Eventually.eventually(Eventually.timeout(TEST_TIMEOUT), Eventually.interval(100 millis)) {
           assert(SparkYarnApp.leakedAppTags.size() == 0)
+        }
+      }
+    }
+
+    it("should mark app as failed when throwing exception") {
+      Clock.withSleepMethod(mockSleep) {
+        val mockYarnClient = mock[YarnClient]
+        val mockSparkSubmit = mock[LineBufferedProcess]
+        when(mockSparkSubmit.isAlive).thenReturn(false)
+        when(mockSparkSubmit.exitValue).thenReturn(-1)
+        val mockListener = mock[SparkAppListener]
+
+        val app = new SparkYarnApp(
+          appTag, None, Some(mockSparkSubmit), Some(mockListener), livyConf, mockYarnClient)
+        Utils.waitUntil({ () => app.isRunning }, Duration(10, TimeUnit.SECONDS))
+
+        cleanupThread(app.yarnAppMonitorThread) {
+          app.kill()
+          app.yarnAppMonitorThread.join(TEST_TIMEOUT.toMillis)
+
+          assert(!app.yarnAppMonitorThread.isAlive,
+            "YarnAppMonitorThread should terminate after spark-submit failure.")
+
+          assert(app.state == SparkApp.State.FAILED,
+            "SparkYarnApp should end with state failed when spark submit failed")
         }
       }
     }
