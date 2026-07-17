@@ -94,7 +94,7 @@ class WebServer(livyConf: LivyConf, var host: String, var port: Int) extends Log
 
   // Configure the access log
   val requestLogHandler = new RequestLogHandler
-  val logPath = sys.env.getOrElse("LIVY_LOG_DIR", 
+  val logPath = sys.env.getOrElse("LIVY_LOG_DIR",
     sys.env("LIVY_HOME") + "/logs") + "/yyyy_mm_dd.request.log"
   val requestLogWriter = new RequestLogWriter(logPath)
   requestLogWriter.setAppend(true)
