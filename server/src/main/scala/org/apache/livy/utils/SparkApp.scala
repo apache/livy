@@ -17,9 +17,13 @@
 
 package org.apache.livy.utils
 
+import java.io.IOException
+
 import scala.collection.JavaConverters._
 
-import org.apache.livy.LivyConf
+import org.apache.hadoop.conf.Configuration
+
+import org.apache.livy.{LivyConf, Logging}
 
 object AppInfo {
   val DRIVER_LOG_URL_NAME = "driverLogUrl"
@@ -54,7 +58,7 @@ trait SparkAppListener {
 /**
  * Provide factory methods for SparkApp.
  */
-object SparkApp {
+object SparkApp extends Logging {
   private val SPARK_YARN_TAG_KEY = "spark.yarn.tags"
 
   object State extends Enumeration {
@@ -73,7 +77,7 @@ object SparkApp {
       uniqueAppTag: String,
       livyConf: LivyConf,
       sparkConf: Map[String, String]): Map[String, String] = {
-    if (livyConf.isRunningOnYarn()) {
+    val baseConf = if (livyConf.isRunningOnYarn()) {
       val userYarnTags = sparkConf.get(SPARK_YARN_TAG_KEY).map("," + _).getOrElse("")
       val mergedYarnTags = uniqueAppTag + userYarnTags
       sparkConf ++ Map(
@@ -88,6 +92,52 @@ object SparkApp {
         "spark.ui.proxyBase" -> s"/$uniqueAppTag")
     } else {
       sparkConf
+    }
+    enrichHiveMetastoreSslConf(baseConf, livyConf)
+  }
+
+  /**
+   * Reads HMS SSL passwords from LivyConf's local JCEKS provider and injects them as
+   * spark.hadoop.* properties for YARN/K8s drivers and executors. The incoming Spark
+   * conf (including any user-supplied credential provider path) is preserved; only
+   * HMS SSL properties are merged via `conf ++ sslProps`.
+   *
+   * No-op if no credential provider path is configured, or if it resolves to
+   * unrelated (non-HMS) secrets; in either case the original conf is returned
+   * untouched so any user-supplied provider path (e.g. an HDFS-backed one used
+   * for other credentials) is preserved.
+   */
+  private def enrichHiveMetastoreSslConf(
+      conf: Map[String, String],
+      livyConf: LivyConf): Map[String, String] = {
+    val credentialProviderPath = livyConf.get(LivyConf.HADOOP_CREDENTIAL_PROVIDER_PATH)
+    if (credentialProviderPath == null || credentialProviderPath.isEmpty) {
+      return conf
+    }
+    val hadoopConf = new Configuration()
+    hadoopConf.set("hadoop.security.credential.provider.path", credentialProviderPath)
+    val hmsSslKeys = Seq("hive.metastore.keystore.password", "hive.metastore.truststore.password")
+    val sslProps =
+      try {
+        hmsSslKeys.flatMap { key =>
+          Option(hadoopConf.getPassword(key)).map(_.mkString) match {
+            case Some(password) if password.nonEmpty => Some(s"spark.hadoop.$key" -> password)
+            case _ => None
+          }
+        }.toMap
+      } catch {
+        case e: IOException =>
+          warn(s"Could not resolve Hive Metastore SSL credentials from provider path " +
+            s"$credentialProviderPath: ${e.getMessage}")
+          Map.empty[String, String]
+      }
+
+    if (sslProps.isEmpty) {
+      // Nothing HMS-related found (or resolution failed); leave the user's
+      // provider path config exactly as it was.
+      conf
+    } else {
+      conf ++ sslProps
     }
   }
 
