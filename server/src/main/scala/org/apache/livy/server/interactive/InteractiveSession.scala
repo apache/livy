@@ -79,7 +79,9 @@ object InteractiveSession extends Logging {
   val RECOVERY_SESSION_TYPE = "interactive"
 
   private[interactive] def defaultSparkAppName(sessionId: Int, livyConf: LivyConf): String = {
-    s"${livyConf.get(LivyConf.SERVER_APP_NAME_PREFIX)}-$sessionId"
+    val prefix = Option(livyConf.get(LivyConf.SERVER_APP_NAME_PREFIX)).filter(_.nonEmpty)
+      .getOrElse("livy-session")
+    s"$prefix-$sessionId"
   }
 
   def create(
