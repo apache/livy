@@ -37,6 +37,10 @@
 # What port to start the server on.
 # livy.server.port = 8998
 
+# Prefix for YARN application names of interactive sessions when no name is provided
+# in the session creation request. The application name becomes <prefix>-<session-id>.
+# livy.server.app-name-prefix = livy-session
+
 # What base path ui should work on. By default UI is mounted on "/".
 # E.g.: livy.ui.basePath = /my_livy - result in mounting UI on /my_livy/
 # livy.ui.basePath = ""

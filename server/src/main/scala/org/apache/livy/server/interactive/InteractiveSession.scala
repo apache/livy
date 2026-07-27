@@ -78,6 +78,10 @@ object InteractiveSession extends Logging {
 
   val RECOVERY_SESSION_TYPE = "interactive"
 
+  private[interactive] def defaultSparkAppName(sessionId: Int, livyConf: LivyConf): String = {
+    s"${livyConf.get(LivyConf.SERVER_APP_NAME_PREFIX)}-$sessionId"
+  }
+
   def create(
       id: Int,
       name: Option[String],
@@ -114,7 +118,7 @@ object InteractiveSession extends Logging {
         opt.foreach { value => builderProperties.put(key, value) }
       }
 
-      builderProperties.getOrElseUpdate("spark.app.name", s"livy-session-$id")
+      builderProperties.getOrElseUpdate("spark.app.name", defaultSparkAppName(id, livyConf))
 
       info(s"Creating Interactive session $id: [owner: $owner, request: $request]")
       val builder = new LivyClientBuilder()
