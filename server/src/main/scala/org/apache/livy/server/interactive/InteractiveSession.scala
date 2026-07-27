@@ -111,7 +111,7 @@ object InteractiveSession extends Logging {
         SparkLauncher.EXECUTOR_MEMORY -> request.executorMemory.map(_.toString),
         "spark.executor.instances" -> request.numExecutors.map(_.toString),
         "spark.app.name" -> request.name.map(_.toString),
-        "spark.yarn.queue" -> request.queue
+        "spark.yarn.queue" -> request.queue.filterNot(_.isEmpty).orElse(livyConf.sparkYarnQueue())
       )
 
       userOpts.foreach { case (key, opt) =>
@@ -156,7 +156,7 @@ object InteractiveSession extends Logging {
       request.jars,
       request.numExecutors,
       request.pyFiles,
-      request.queue,
+      request.queue.filterNot(_.isEmpty).orElse(livyConf.sparkYarnQueue()),
       mockApp)
   }
 
