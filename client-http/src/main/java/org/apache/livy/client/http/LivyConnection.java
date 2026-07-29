@@ -24,6 +24,7 @@ import java.security.Principal;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
@@ -59,6 +60,7 @@ class LivyConnection {
 
   static final String SESSIONS_URI = "/sessions";
   private static final String APPLICATION_JSON = "application/json";
+  private static final int MAX_REDIRECTS = 1;
 
   private final URI server;
   private final String uriRoot;
@@ -215,24 +217,38 @@ class LivyConnection {
       uriRoot + String.format(uri, uriParams), null, null));
     // It is no harm to set X-Requested-By when csrf protection is disabled.
     if (req instanceof HttpPost || req instanceof HttpDelete || req instanceof HttpPut
-            || req instanceof  HttpPatch) {
+            || req instanceof HttpPatch) {
       req.addHeader("X-Requested-By", "livy");
     }
-    try (CloseableHttpResponse res = client.execute(req)) {
-      int status = (res.getStatusLine().getStatusCode() / 100) * 100;
-      HttpEntity entity = res.getEntity();
-      if (status == HttpStatus.SC_OK) {
-        if (!Void.class.equals(retType)) {
-          return mapper.readValue(entity.getContent(), retType);
-        } else {
-          return null;
+    int redirectCount = 0;
+    do {
+      try (CloseableHttpResponse res = client.execute(req)) {
+        int statusCode = res.getStatusLine().getStatusCode();
+        int statusClass = (statusCode / 100) * 100;
+        HttpEntity entity = res.getEntity();
+        if (statusClass == HttpStatus.SC_OK) {
+          if (!Void.class.equals(retType)) {
+            return mapper.readValue(entity.getContent(), retType);
+          } else {
+            return null;
+          }
         }
-      } else {
-        String error = EntityUtils.toString(entity);
-        throw new IOException(String.format("%s: %s", res.getStatusLine().getReasonPhrase(),
-          error));
+        if (statusCode == HttpStatus.SC_TEMPORARY_REDIRECT) {
+          // Redirect to active server when Livy is running in HA mode.
+          Header locationHeader = res.getFirstHeader(HttpHeaders.LOCATION);
+          if (locationHeader == null || locationHeader.getValue().isEmpty()) {
+            throw new IOException("Temporary Redirect without Location header");
+          }
+          EntityUtils.consume(entity);
+          req.setURI(new URI(locationHeader.getValue()));
+        } else {
+          String error = EntityUtils.toString(entity);
+          throw new IOException(String.format("%s: %s", res.getStatusLine().getReasonPhrase(),
+            error));
+        }
       }
-    }
+    } while (++redirectCount <= MAX_REDIRECTS);
+    throw new IOException("Too many redirects");
   }
 
 }
