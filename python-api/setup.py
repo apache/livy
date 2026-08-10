@@ -37,7 +37,11 @@ requirements = [
 
 setup(
     name='livy-python-api',
-    version="1.0.0-SNAPSHOT",
+    # PEP 440 disallows Maven-style `-SNAPSHOT` suffixes; use `.dev0` instead,
+    # which is the canonical Python equivalent for "pre-release under active
+    # development". Modern pip (>= 24) rejects `1.0.0-SNAPSHOT` outright with
+    # `Invalid version: '1.0.0-SNAPSHOT'` when parsing this package.
+    version="1.0.0.dev0",
     packages=["livy", "livy-tests"],
     package_dir={
         "": "src/main/python",
