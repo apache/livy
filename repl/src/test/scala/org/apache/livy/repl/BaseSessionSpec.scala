@@ -26,8 +26,9 @@ import scala.language.postfixOps
 
 import org.apache.spark.SparkConf
 import org.json4s._
-import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.concurrent.Eventually._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.apache.livy.LivyBaseUnitTestSuite
 import org.apache.livy.client.common.TestUtils
@@ -36,7 +37,7 @@ import org.apache.livy.rsc.driver.{Statement, StatementState}
 import org.apache.livy.sessions._
 
 abstract class BaseSessionSpec(kind: Kind)
-    extends FlatSpec with Matchers with LivyBaseUnitTestSuite {
+    extends AnyFlatSpec with Matchers with LivyBaseUnitTestSuite {
 
   implicit val formats = DefaultFormats
 

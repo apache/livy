@@ -19,13 +19,14 @@ package org.apache.livy.server
 
 import javax.servlet.http.HttpServletResponse
 
-import org.scalatest.FunSpecLike
+import org.scalatest.funspec.AnyFunSpecLike
 import org.scalatra.ScalatraServlet
 import org.scalatra.test.scalatest.ScalatraSuite
 
 import org.apache.livy.LivyBaseUnitTestSuite
 
-class ApiVersioningSupportSpec extends ScalatraSuite with FunSpecLike with LivyBaseUnitTestSuite {
+class ApiVersioningSupportSpec extends ScalatraSuite with AnyFunSpecLike
+    with LivyBaseUnitTestSuite {
   val LatestVersionOutput = "latest"
 
   object FakeApiVersions extends Enumeration {

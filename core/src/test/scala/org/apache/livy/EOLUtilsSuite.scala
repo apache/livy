@@ -17,9 +17,9 @@
 
 package org.apache.livy
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-class EOLUtilsSuite extends FunSuite with LivyBaseUnitTestSuite {
+class EOLUtilsSuite extends AnyFunSuite with LivyBaseUnitTestSuite {
 
   test("check EOL") {
     val s1 = "test\r\ntest"

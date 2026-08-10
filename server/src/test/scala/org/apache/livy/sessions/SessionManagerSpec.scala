@@ -23,8 +23,9 @@ import scala.language.postfixOps
 import scala.util.{Failure, Try}
 
 import org.mockito.Mockito.{doReturn, never, verify, when}
-import org.scalatest.{FunSpec, Matchers}
 import org.scalatest.concurrent.Eventually._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
@@ -33,7 +34,7 @@ import org.apache.livy.server.interactive.{InteractiveRecoveryMetadata, Interact
 import org.apache.livy.server.recovery.SessionStore
 import org.apache.livy.sessions.Session.RecoveryMetadata
 
-class SessionManagerSpec extends FunSpec with Matchers with LivyBaseUnitTestSuite {
+class SessionManagerSpec extends AnyFunSpec with Matchers with LivyBaseUnitTestSuite {
   implicit def executor: ExecutionContext = ExecutionContext.global
 
   private def createSessionManager(livyConf: LivyConf = new LivyConf())

@@ -19,11 +19,11 @@ package org.apache.livy.sessions
 
 import java.net.URI
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 
-class SessionSpec extends FunSuite with LivyBaseUnitTestSuite {
+class SessionSpec extends AnyFunSuite with LivyBaseUnitTestSuite {
 
   test("use default fs in paths") {
     val conf = new LivyConf(false)

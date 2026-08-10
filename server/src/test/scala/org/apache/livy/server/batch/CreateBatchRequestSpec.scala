@@ -18,11 +18,11 @@
 package org.apache.livy.server.batch
 
 import com.fasterxml.jackson.databind.{JsonMappingException, ObjectMapper}
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import org.apache.livy.LivyBaseUnitTestSuite
 
-class CreateBatchRequestSpec extends FunSpec with LivyBaseUnitTestSuite {
+class CreateBatchRequestSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
 
   private val mapper = new ObjectMapper()
     .registerModule(com.fasterxml.jackson.module.scala.DefaultScalaModule)

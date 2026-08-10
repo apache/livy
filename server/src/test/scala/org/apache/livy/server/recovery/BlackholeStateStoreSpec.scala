@@ -17,13 +17,13 @@
 
 package org.apache.livy.server.recovery
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers._
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 import org.apache.livy.server.batch.BatchRecoveryMetadata
 
-class BlackholeStateStoreSpec extends FunSpec with LivyBaseUnitTestSuite {
+class BlackholeStateStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
   describe("BlackholeStateStore") {
     val stateStore = new BlackholeStateStore(new LivyConf())
 

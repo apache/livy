@@ -20,7 +20,8 @@ package org.apache.livy.thriftserver
 import java.sql.{Connection, DriverManager, Statement}
 
 import org.apache.hive.jdbc.HiveDriver
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.livy.LivyConf
 import org.apache.livy.LivyConf.{LIVY_SPARK_SCALA_VERSION, LIVY_SPARK_VERSION}
@@ -35,7 +36,7 @@ object ServerMode extends Enumeration {
   val binary, http = Value
 }
 
-abstract class ThriftServerBaseTest extends FunSuite with BeforeAndAfterAll {
+abstract class ThriftServerBaseTest extends AnyFunSuite with BeforeAndAfterAll {
   def mode: ServerMode.Value
   def port: Int
 

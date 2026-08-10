@@ -26,7 +26,8 @@ import scala.concurrent.duration.Duration
 import org.mockito.Matchers
 import org.mockito.Matchers.anyObject
 import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfter, FunSpec}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf, Utils}
@@ -36,9 +37,9 @@ import org.apache.livy.sessions.SessionState
 import org.apache.livy.utils.{AppInfo, Clock, SparkApp}
 
 class BatchSessionSpec
-  extends FunSpec
+  extends AnyFunSpec
   with BeforeAndAfter
-  with org.scalatest.Matchers
+  with org.scalatest.matchers.should.Matchers
   with LivyBaseUnitTestSuite {
 
   val script: Path = {

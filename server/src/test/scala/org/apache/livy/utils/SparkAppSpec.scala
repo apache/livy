@@ -23,11 +23,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.alias.CredentialProviderFactory
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 
-class SparkAppSpec extends FunSpec with LivyBaseUnitTestSuite {
+class SparkAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
 
   private val providerPathKey = "spark.hadoop.hadoop.security.credential.provider.path"
   private val truststorePasswordKey = "spark.hadoop.hive.metastore.truststore.password"

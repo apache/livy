@@ -20,7 +20,9 @@ package org.apache.livy.repl
 import org.apache.spark.SparkConf
 import org.json4s.DefaultFormats
 import org.json4s.JsonDSL._
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, Outcome}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 import org.apache.livy.rsc.driver.SparkEntries
 

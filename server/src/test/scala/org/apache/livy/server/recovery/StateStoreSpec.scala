@@ -17,13 +17,14 @@
 
 package org.apache.livy.server.recovery
 
-import org.scalatest.{BeforeAndAfter, FunSpec}
-import org.scalatest.Matchers._
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers._
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 import org.apache.livy.sessions.SessionManager
 
-class StateStoreSpec extends FunSpec with BeforeAndAfter with LivyBaseUnitTestSuite {
+class StateStoreSpec extends AnyFunSpec with BeforeAndAfter with LivyBaseUnitTestSuite {
   describe("StateStore") {
     after {
       StateStore.cleanup()

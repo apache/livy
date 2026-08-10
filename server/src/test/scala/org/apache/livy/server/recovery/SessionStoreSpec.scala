@@ -20,14 +20,14 @@ package org.apache.livy.server.recovery
 import scala.util.Success
 
 import org.mockito.Mockito._
-import org.scalatest.FunSpec
-import org.scalatest.Matchers._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers._
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 import org.apache.livy.sessions.Session.RecoveryMetadata
 
-class SessionStoreSpec extends FunSpec with LivyBaseUnitTestSuite {
+class SessionStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
   describe("SessionStore") {
     case class TestRecoveryMetadata(id: Int) extends RecoveryMetadata
 
