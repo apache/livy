@@ -17,14 +17,14 @@
 
 package org.apache.livy.utils
 
-import org.scalatest.FunSuite
-import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 import org.apache.livy.LivyConf._
 import org.apache.livy.server.LivyServer
 
-class LivySparkUtilsSuite extends FunSuite with Matchers with LivyBaseUnitTestSuite {
+class LivySparkUtilsSuite extends AnyFunSuite with Matchers with LivyBaseUnitTestSuite {
 
   import LivySparkUtils._
 

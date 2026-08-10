@@ -26,15 +26,15 @@ import scala.language.postfixOps
 import org.apache.spark.launcher.SparkLauncher
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
-import org.scalatest.FunSuite
 import org.scalatest.concurrent.Eventually._
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.livy._
 import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.{PingJob, RSCClient, RSCConf}
 import org.apache.livy.sessions.Spark
 
-class ReplDriverSuite extends FunSuite with LivyBaseUnitTestSuite {
+class ReplDriverSuite extends AnyFunSuite with LivyBaseUnitTestSuite {
 
   private implicit val formats = DefaultFormats
 

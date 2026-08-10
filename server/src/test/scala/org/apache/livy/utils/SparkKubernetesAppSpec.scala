@@ -22,13 +22,14 @@ import io.fabric8.kubernetes.api.model._
 import io.fabric8.kubernetes.api.model.networking.v1.{Ingress, IngressRule, IngressSpec}
 import io.fabric8.kubernetes.client.KubernetesClient
 import org.mockito.Mockito.when
-import org.scalatest.{BeforeAndAfterAll, FunSpec}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatestplus.mockito.MockitoSugar._
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 import org.apache.livy.utils.KubernetesConstants.SPARK_APP_TAG_LABEL
 
-class SparkKubernetesAppSpec extends FunSpec with LivyBaseUnitTestSuite with BeforeAndAfterAll {
+class SparkKubernetesAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
     super.beforeAll()

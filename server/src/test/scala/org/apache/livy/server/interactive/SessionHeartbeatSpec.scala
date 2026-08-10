@@ -22,8 +22,9 @@ import scala.concurrent.Future
 import scala.language.postfixOps
 
 import org.mockito.Mockito.{never, verify, when}
-import org.scalatest.{FunSpec, Matchers}
 import org.scalatest.concurrent.Eventually._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.livy.LivyConf
@@ -31,7 +32,7 @@ import org.apache.livy.server.recovery.SessionStore
 import org.apache.livy.sessions.{Session, SessionManager}
 import org.apache.livy.sessions.Session.RecoveryMetadata
 
-class SessionHeartbeatSpec extends FunSpec with Matchers {
+class SessionHeartbeatSpec extends AnyFunSpec with Matchers {
   describe("SessionHeartbeat") {
     class TestHeartbeat(override val heartbeatTimeout: FiniteDuration) extends SessionHeartbeat {}
 

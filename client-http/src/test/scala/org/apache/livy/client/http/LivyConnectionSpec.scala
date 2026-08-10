@@ -25,15 +25,16 @@ import org.eclipse.jetty.security._
 import org.eclipse.jetty.security.UserStore
 import org.eclipse.jetty.security.authentication.BasicAuthenticator
 import org.eclipse.jetty.util.security._
-import org.scalatest.{BeforeAndAfterAll, FunSpecLike}
-import org.scalatest.Matchers._
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funspec.AnyFunSpecLike
+import org.scalatest.matchers.should.Matchers._
 import org.scalatra.servlet.ScalatraListener
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 import org.apache.livy.client.common.TestUtils
 import org.apache.livy.server.WebServer
 
-class LivyConnectionSpec extends FunSpecLike with BeforeAndAfterAll with LivyBaseUnitTestSuite {
+class LivyConnectionSpec extends AnyFunSpecLike with BeforeAndAfterAll with LivyBaseUnitTestSuite {
   describe("LivyConnection") {
     def basicAuth(username: String, password: String, realm: String): SecurityHandler = {
       val roles = Array("user")

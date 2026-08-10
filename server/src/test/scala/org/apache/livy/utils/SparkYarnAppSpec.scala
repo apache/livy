@@ -36,13 +36,13 @@ import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.concurrent.Eventually
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf, Utils}
 import org.apache.livy.utils.SparkApp._
 
-class SparkYarnAppSpec extends FunSpec with LivyBaseUnitTestSuite {
+class SparkYarnAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
   private def cleanupThread(t: Thread)(f: => Unit) = {
     try { f } finally { t.interrupt() }
   }

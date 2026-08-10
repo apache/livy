@@ -18,12 +18,12 @@
 package org.apache.livy.server.interactive
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.scalatest.FunSpec
+import org.scalatest.funspec.AnyFunSpec
 
 import org.apache.livy.LivyBaseUnitTestSuite
 import org.apache.livy.sessions.{PySpark, SessionKindModule}
 
-class CreateInteractiveRequestSpec extends FunSpec with LivyBaseUnitTestSuite {
+class CreateInteractiveRequestSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
 
   private val mapper = new ObjectMapper()
     .registerModule(com.fasterxml.jackson.module.scala.DefaultScalaModule)

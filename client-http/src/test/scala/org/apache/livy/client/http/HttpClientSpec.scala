@@ -30,7 +30,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => meq, _}
 import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfterAll, FunSpecLike}
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funspec.AnyFunSpecLike
 import org.scalatra.LifeCycle
 import org.scalatra.servlet.ScalatraListener
 
@@ -49,7 +50,7 @@ import org.apache.livy.utils.AppInfo
  * module, which implements the client session backend. The client servlet has some functionality
  * overridden to avoid creating sub-processes for each seession.
  */
-class HttpClientSpec extends FunSpecLike with BeforeAndAfterAll with LivyBaseUnitTestSuite {
+class HttpClientSpec extends AnyFunSpecLike with BeforeAndAfterAll with LivyBaseUnitTestSuite {
 
   import HttpClientSpec._
 

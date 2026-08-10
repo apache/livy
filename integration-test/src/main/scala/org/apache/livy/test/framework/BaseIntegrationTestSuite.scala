@@ -38,9 +38,11 @@ import org.apache.http.client.params.AuthPolicy
 import org.apache.http.impl.auth.BasicSchemeFactory
 import org.apache.http.impl.auth.SPNegoSchemeFactory
 import org.apache.http.impl.client.DefaultHttpClient
-import org.scalatest._
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-abstract class BaseIntegrationTestSuite extends FunSuite with Matchers with BeforeAndAfterAll {
+abstract class BaseIntegrationTestSuite extends AnyFunSuite with Matchers with BeforeAndAfterAll {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   var cluster: Cluster = _

@@ -17,11 +17,12 @@
 
 package org.apache.livy.server
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 
-class AccessManagerSuite extends FunSuite with Matchers with LivyBaseUnitTestSuite {
+class AccessManagerSuite extends AnyFunSuite with Matchers with LivyBaseUnitTestSuite {
   import LivyConf._
 
   private val viewUsers = Seq("user1", "user2", "user3")

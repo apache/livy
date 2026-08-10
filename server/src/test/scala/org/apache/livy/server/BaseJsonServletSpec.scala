@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletResponse._
 import scala.reflect.ClassTag
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.scalatest.FunSpecLike
+import org.scalatest.funspec.AnyFunSpecLike
 import org.scalatra.test.scalatest.ScalatraSuite
 
 import org.apache.livy.LivyBaseUnitTestSuite
@@ -38,7 +38,7 @@ import org.apache.livy.LivyBaseUnitTestSuite
  * `Unit`, and the `response` object should be checked directly.
  */
 abstract class BaseJsonServletSpec extends ScalatraSuite
-  with FunSpecLike with LivyBaseUnitTestSuite {
+  with AnyFunSpecLike with LivyBaseUnitTestSuite {
 
   protected val mapper = new ObjectMapper()
     .registerModule(com.fasterxml.jackson.module.scala.DefaultScalaModule)

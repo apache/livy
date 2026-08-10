@@ -22,12 +22,13 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.{atLeastOnce, verify}
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 
-class SecurityHeadersFilterSpec extends FunSpec with Matchers with LivyBaseUnitTestSuite {
+class SecurityHeadersFilterSpec extends AnyFunSpec with Matchers with LivyBaseUnitTestSuite {
 
   val requiredHeaders = Set("X-Content-Type-Options", "X-Frame-Options", "X-XSS-Protection",
     "Content-Security-Policy")

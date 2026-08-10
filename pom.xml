@@ -98,12 +98,21 @@
     <libthrift.version>0.9.3</libthrift.version>
     <log4j.version>2.26.0</log4j.version>
     <kryo.version>4.0.2</kryo.version>
-    <metrics.version>3.1.0</metrics.version>
+    <!-- Scalatra 2.8.x pulls in metrics-servlets 4.2.x; keeping metrics-core
+         and metrics-healthchecks on 3.1.0 causes a NoClassDefFoundError for
+         HealthCheckFilter at runtime (the class moved in Dropwizard 4.x). -->
+    <metrics.version>4.2.19</metrics.version>
     <mockito.version>1.10.19</mockito.version>
     <netty.version>4.1.86.Final</netty.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <scalatest.version>3.0.8</scalatest.version>
-    <scalatra.version>2.6.5</scalatra.version>
+    <!-- Scalatest 3.2.9 is required by Scalatra 2.8.x (needed for Scala
+         2.13 support). All test suites are written against the 3.2 API,
+         where types like `FunSuite`/`Matchers` moved into subpackages. -->
+    <scalatest.version>3.2.9</scalatest.version>
+    <!-- The scalatestplus mockito artifact uses a four-part version that tracks
+         scalatest (e.g. 3.2.9.0 for scalatest 3.2.9). -->
+    <scalatestplus.mockito.version>3.2.9.0</scalatestplus.mockito.version>
+    <scalatra.version>2.8.4</scalatra.version>
     <java.version>1.8</java.version>
     <owasp.version>12.1.9</owasp.version>
     <extraJavaTestArgs>
@@ -260,6 +269,15 @@
       <groupId>org.scalatest</groupId>
       <artifactId>scalatest_${scala.binary.version}</artifactId>
       <version>${scalatest.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- ScalaTest 3.2 moved `MockitoSugar.mock` into a separate scalatestplus
+         artifact. -->
+    <dependency>
+      <groupId>org.scalatestplus</groupId>
+      <artifactId>mockito-3-4_${scala.binary.version}</artifactId>
+      <version>${scalatestplus.mockito.version}</version>
       <scope>test</scope>
     </dependency>
 

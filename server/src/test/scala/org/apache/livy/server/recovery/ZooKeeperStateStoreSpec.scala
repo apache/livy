@@ -26,13 +26,13 @@ import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListe
 import org.apache.zookeeper.data.Stat
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
-import org.scalatest.FunSpec
-import org.scalatest.Matchers._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers._
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 
-class ZooKeeperStateStoreSpec extends FunSpec with LivyBaseUnitTestSuite {
+class ZooKeeperStateStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
   describe("ZooKeeperStateStore") {
     case class TestFixture(stateStore: ZooKeeperStateStore, curatorClient: CuratorFramework)
     val conf = new LivyConf()

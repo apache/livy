@@ -33,14 +33,15 @@ import scala.util.{Failure, Success}
 
 import org.apache.spark.SparkFiles
 import org.apache.spark.launcher.SparkLauncher
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.livy.LivyBaseUnitTestSuite
 import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.RSCConf.Entry._
 
-class ScalaClientTest extends FunSuite
+class ScalaClientTest extends AnyFunSuite
   with ScalaFutures
   with BeforeAndAfter
   with LivyBaseUnitTestSuite {
