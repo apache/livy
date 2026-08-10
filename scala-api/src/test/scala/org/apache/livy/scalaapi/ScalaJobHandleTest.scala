@@ -66,9 +66,15 @@ class ScalaJobHandleTest extends AnyFunSuite
   test("ready with Infinite Duration") {
     when(mockJobHandle.isDone).thenReturn(true)
     when(mockJobHandle.get()).thenReturn("hello")
-    val result = Await.ready(scalaJobHandle, Duration.Undefined)
+    // Scala 2.13's Await.ready rejects `Duration.Undefined` as
+    // "Cannot wait for Undefined duration of time"; use `Duration.Inf`.
+    // Also, 2.13's `Await.ready` short-circuits when `isCompleted` is
+    // already true and does not call the underlying `ready(atMost)`, so
+    // the `jobHandle.get()` invocation is not observed on 2.13. Assert
+    // on `isDone` instead, which is exercised by both versions.
+    val result = Await.ready(scalaJobHandle, Duration.Inf)
     assert(result == scalaJobHandle)
-    verify(mockJobHandle, times(1)).get()
+    verify(mockJobHandle, atLeastOnce()).isDone
   }
 
   test("verify addListener call of java jobHandle for onComplete") {

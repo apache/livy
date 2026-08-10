@@ -245,18 +245,21 @@ object InteractiveSession extends Logging {
       }
     }
 
-    def datanucleusJars(livyConf: LivyConf, sparkMajorVersion: Int): Seq[String] = {
+    def datanucleusJars(
+        livyConf: LivyConf,
+        sparkMajorVersion: Int,
+        scalaVersion: String): Seq[String] = {
       if (sys.env.getOrElse("LIVY_INTEGRATION_TEST", "false").toBoolean) {
         // datanucleus jars has already been in classpath in integration test
         Seq.empty
       } else {
         val sparkHome = livyConf.sparkHome().get
         val libdir = sparkMajorVersion match {
-          case 3 =>
+          case 3 | 4 =>
             if (new File(sparkHome, "RELEASE").isFile) {
               new File(sparkHome, "jars")
             } else {
-              new File(sparkHome, "assembly/target/scala-2.12/jars")
+              new File(sparkHome, s"assembly/target/scala-$scalaVersion/jars")
             }
           case v =>
             throw new RuntimeException(
@@ -340,17 +343,19 @@ object InteractiveSession extends Logging {
       }
     }
 
-    def mergeHiveSiteAndHiveDeps(sparkMajorVersion: Int): Unit = {
+    def mergeHiveSiteAndHiveDeps(sparkMajorVersion: Int, scalaVersion: String): Unit = {
       val sparkFiles = conf.get("spark.files").map(_.split(",")).getOrElse(Array.empty[String])
       hiveSiteFile(sparkFiles, livyConf) match {
         case (_, true) =>
           debug("Enable HiveContext because hive-site.xml is found in user request.")
-          mergeConfList(datanucleusJars(livyConf, sparkMajorVersion), LivyConf.SPARK_JARS)
+          mergeConfList(
+            datanucleusJars(livyConf, sparkMajorVersion, scalaVersion), LivyConf.SPARK_JARS)
         case (Some(file), false) =>
           debug("Enable HiveContext because hive-site.xml is found under classpath, "
             + file.getAbsolutePath)
           mergeConfList(List(file.getAbsolutePath), LivyConf.SPARK_FILES)
-          mergeConfList(datanucleusJars(livyConf, sparkMajorVersion), LivyConf.SPARK_JARS)
+          mergeConfList(
+            datanucleusJars(livyConf, sparkMajorVersion, scalaVersion), LivyConf.SPARK_JARS)
         case (None, false) =>
           warn("Enable HiveContext but no hive-site.xml found under" +
             " classpath or user request.")
@@ -396,7 +401,7 @@ object InteractiveSession extends Logging {
     builderProperties.put("spark.sql.catalogImplementation", confVal)
 
     if (enableHiveContext) {
-      mergeHiveSiteAndHiveDeps(sparkMajorVersion)
+      mergeHiveSiteAndHiveDeps(sparkMajorVersion, scalaVersion)
     }
 
     // Pick all the RSC-specific configs that have not been explicitly set otherwise, and
@@ -485,6 +490,9 @@ class InteractiveSession(
         client.get.getServerUri.get()
       }(sessionManageExecutors)
 
+      // `Future.onSuccess` / `onFailure` were deprecated in 2.12 and removed
+      // in 2.13; use `.foreach` and `.failed.foreach` which behave identically
+      // for the callback-style usage.
       uriFuture.foreach { url =>
         rscDriverUri = Option(url)
         sessionSaveLock.synchronized {

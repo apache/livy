@@ -16,7 +16,11 @@
 #
 name: Unit Tests
 on:
+  # Feature branches only fire on their PR events; the `push` trigger is
+  # scoped to protected branches so a single commit does not spawn both a
+  # `push` run and a duplicate `pull_request` run at the same time.
   push:
+    branches: [master, branch-*]
   pull_request:
     types: [opened, reopened, synchronize]
 env:
@@ -29,11 +33,14 @@ jobs:
     container: ghcr.io/${{ github.repository_owner }}/livy-ci:latest
     strategy:
       matrix:
-        maven_profile:
-        - "-Pscala-2.12 -Pspark3"
-        jdk_path:
-        - "/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java"
-        - "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
+        include:
+          - maven_profile: "-Pscala-2.12 -Pspark3"
+            jdk_path: "/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java"
+          - maven_profile: "-Pscala-2.12 -Pspark3"
+            jdk_path: "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
+          # Spark 4 requires JDK 17+ and Scala 2.13; JDK 8 is unsupported.
+          - maven_profile: "-Pscala-2.13 -Pspark4"
+            jdk_path: "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
     steps:
     -
       name: Checkout

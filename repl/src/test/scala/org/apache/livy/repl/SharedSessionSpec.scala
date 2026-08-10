@@ -30,6 +30,11 @@ import org.apache.livy.sessions._
 
 class SharedSessionSpec extends BaseSessionSpec(Shared) {
 
+  // Scala 2.13's REPL prefixes bound-name output with `val `; 2.12 does not.
+  private val is213: Boolean =
+    scala.util.Properties.versionNumberString.startsWith("2.13")
+  private val valPrefix: String = if (is213) "val " else ""
+
   private def execute(session: Session, code: String, codeType: String): Statement = {
     val id = session.execute(code, codeType)
     eventually(timeout(30 seconds), interval(100 millis)) {
@@ -48,7 +53,7 @@ class SharedSessionSpec extends BaseSessionSpec(Shared) {
       "status" -> "ok",
       "execution_count" -> 0,
       "data" -> Map(
-        "text/plain" -> "res0: Int = 3\n"
+        "text/plain" -> s"${valPrefix}res0: Int = 3\n"
       )
     ))
 
@@ -77,16 +82,11 @@ class SharedSessionSpec extends BaseSessionSpec(Shared) {
     statement.id should equal (0)
 
     val result = parse(statement.output)
-
-    val expectedResult = Extraction.decompose(Map(
-      "status" -> "ok",
-      "execution_count" -> 0,
-      "data" -> Map(
-        "text/plain" -> "res0: Array[Int] = Array(1, 2)\n"
-      )
-    ))
-
-    result should equal (expectedResult)
+    // Scala 2.13's REPL prints a deprecation banner before the collect result.
+    val text = ((result \ "data") \ "text/plain").extract[String]
+    text should include (s"${valPrefix}res0: Array[Int] = Array(1, 2)")
+    (result \ "status").extract[String] should equal ("ok")
+    (result \ "execution_count").extract[Int] should equal (0)
   }
 
   it should "throw exception if code type is not specified in shared session" in withSession {

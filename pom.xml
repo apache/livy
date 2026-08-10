@@ -1068,7 +1068,11 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>3.5.0</version>
+          <!-- 3.6.2 bundles an ASM version that understands Java 22 bytecode
+               (major-version 66). Jackson 2.18.2 ships JDK 22 multi-release
+               classes under META-INF/versions/22, which 3.5.0's older ASM
+               refused to shade with `Unsupported class file major version`. -->
+          <version>3.6.2</version>
         </plugin>
 
         <plugin>
@@ -1428,6 +1432,16 @@
         <scala.version>2.12.18</scala.version>
       </properties>
     </profile>
+    <profile>
+      <id>scala-2.13</id>
+      <properties>
+        <scala.binary.version>2.13</scala.binary.version>
+        <!-- Match the Scala patch Spark 4.1.2 was built against. Spark's
+             Catalyst calls `MurmurHash3.caseClassHash$default$2()` which was
+             added in 2.13.17; older 2.13.x runs fail with NoSuchMethodError. -->
+        <scala.version>2.13.17</scala.version>
+      </properties>
+    </profile>
 
     <profile>
       <id>thriftserver</id>
@@ -1450,6 +1464,34 @@
         <netty.version>4.1.96.Final</netty.version>
         <jackson.version>2.15.2</jackson.version>
         <jackson-databind.version>2.15.2</jackson-databind.version>
+        <spark.bin.name>spark-${spark.version}-bin-hadoop${hadoop.major-minor.version}</spark.bin.name>
+        <spark.bin.download.url>
+          https://archive.apache.org/dist/spark/spark-${spark.version}/${spark.bin.name}.tgz
+        </spark.bin.download.url>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>spark4</id>
+      <properties>
+        <spark.version>4.1.2</spark.version>
+        <hadoop.major-minor.version>3</hadoop.major-minor.version>
+        <hadoop.version>3.4.1</hadoop.version>
+        <java.version>17</java.version>
+        <py4j.version>0.10.9.9</py4j.version>
+        <json4s.version>4.0.7</json4s.version>
+        <!-- Spark 4.1.2 depends on Netty 4.2.7 and calls the new 4.2-only
+             `KQueueIoHandler`; pinning to a 4.1.x line here would let Livy's
+             `netty-all` win and hide that class from Spark's classpath. -->
+        <netty.version>4.2.7.Final</netty.version>
+        <jackson.version>2.18.2</jackson.version>
+        <jackson-databind.version>2.18.2</jackson-databind.version>
+        <!-- scalatra.version and scalatest.version are unified at 2.8.4 and
+             3.2.9 respectively in the root properties (Scalatra 2.6.5 was
+             never published for Scala 2.13, and 2.8.x pulls in scalatest
+             3.2). No override needed here. -->
+        <!-- Spark 4 ships only for Scala 2.13; the tarball name has no
+             `-scala2.13` suffix (unlike the Spark 3.2+ 2.13 variants). -->
         <spark.bin.name>spark-${spark.version}-bin-hadoop${hadoop.major-minor.version}</spark.bin.name>
         <spark.bin.download.url>
           https://archive.apache.org/dist/spark/spark-${spark.version}/${spark.bin.name}.tgz

@@ -201,12 +201,15 @@ class InteractiveSessionSpec extends AnyFunSpec
         "data" -> Map("text/plain" -> "3")))
       )
 
+      // The Scala REPL under Spark 4 (2.13) may or may not prefix the
+      // bound-name output with `val ` depending on the driver JVM's precise
+      // `-Yrepl-class-based` handling; accept either form so both spark3 and
+      // spark4 builds pass without special-casing environment quirks.
       val scalaResult = executeStatement("1 + 2", Some("spark"))
-      scalaResult should equal (Extraction.decompose(Map(
-        "status" -> "ok",
-        "execution_count" -> 1,
-        "data" -> Map("text/plain" -> "res0: Int = 3\n")))
-      )
+      val scalaData = ((scalaResult \ "data") \ "text/plain").extract[String]
+      scalaData should (equal ("res0: Int = 3\n") or equal ("val res0: Int = 3\n"))
+      (scalaResult \ "status").extract[String] should equal ("ok")
+      (scalaResult \ "execution_count").extract[Int] should equal (1)
 
       val rResult = executeStatement("1 + 2", Some("sparkr"))
       rResult should equal (Extraction.decompose(Map(

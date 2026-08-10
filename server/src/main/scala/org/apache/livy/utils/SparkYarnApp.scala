@@ -154,6 +154,10 @@ class SparkYarnApp private[utils] (
   private var yarnDiagnostics: IndexedSeq[String] = IndexedSeq.empty[String]
 
   override def log(): IndexedSeq[String] =
+    // Use `IndexedSeq.empty` (immutable) rather than an `ArrayBuffer` so the
+    // Option#getOrElse return type lines up with the immutable `IndexedSeq`
+    // required by the ambient signature -- Scala 2.13 no longer widens
+    // mutable Buffers to immutable IndexedSeq implicitly.
     ("stdout: " +: process.map(_.inputLines).getOrElse(IndexedSeq.empty[String])) ++
     ("\nstderr: " +: process.map(_.errorLines).getOrElse(IndexedSeq.empty[String])) ++
     ("\nYARN Diagnostics: " +: yarnDiagnostics)

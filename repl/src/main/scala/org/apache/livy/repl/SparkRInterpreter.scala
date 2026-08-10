@@ -183,6 +183,11 @@ class SparkRInterpreter(
   override def kind: String = "sparkr"
   private[this] val isStarted = new CountDownLatch(1)
 
+  if (sparkMajorVersion >= 4) {
+    warn("SparkR is deprecated in Spark 4 (SPARK-49347); the SparkR interpreter " +
+      "may be removed in a future Spark release.")
+  }
+
   final override protected def waitUntilReady(): Unit = {
     // Set the option to catch and ignore errors instead of halting.
     sendRequest("options(error = dump.frames)")

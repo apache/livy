@@ -30,6 +30,12 @@ import org.apache.livy.sessions._
 
 class SparkSessionSpec extends BaseSessionSpec(Spark) {
 
+  // Scala 2.13's REPL prefixes bound-name output with `val ` (or `var `);
+  // 2.12 omitted the modifier.
+  private val is213: Boolean =
+    scala.util.Properties.versionNumberString.startsWith("2.13")
+  private val valPrefix: String = if (is213) "val " else ""
+
   it should "execute `1 + 2` == 3" in withSession { session =>
     val statement = execute(session)("1 + 2")
     statement.id should equal (0)
@@ -39,7 +45,7 @@ class SparkSessionSpec extends BaseSessionSpec(Spark) {
       "status" -> "ok",
       "execution_count" -> 0,
       "data" -> Map(
-        "text/plain" -> "res0: Int = 3\n"
+        "text/plain" -> s"${valPrefix}res0: Int = 3\n"
       )
     ))
 
@@ -56,7 +62,7 @@ class SparkSessionSpec extends BaseSessionSpec(Spark) {
       "status" -> "ok",
       "execution_count" -> 0,
       "data" -> Map(
-        "text/plain" -> "x: Int = 1\n"
+        "text/plain" -> s"${valPrefix}x: Int = 1\n"
       )
     ))
 
@@ -70,7 +76,7 @@ class SparkSessionSpec extends BaseSessionSpec(Spark) {
       "status" -> "ok",
       "execution_count" -> 1,
       "data" -> Map(
-        "text/plain" -> "y: Int = 2\n"
+        "text/plain" -> s"${valPrefix}y: Int = 2\n"
       )
     ))
 
@@ -84,7 +90,7 @@ class SparkSessionSpec extends BaseSessionSpec(Spark) {
       "status" -> "ok",
       "execution_count" -> 2,
       "data" -> Map(
-        "text/plain" -> "res0: Int = 3\n"
+        "text/plain" -> s"${valPrefix}res0: Int = 3\n"
       )
     ))
 
@@ -164,16 +170,13 @@ class SparkSessionSpec extends BaseSessionSpec(Spark) {
     statement.id should equal (0)
 
     val result = parse(statement.output)
-
-    val expectedResult = Extraction.decompose(Map(
-      "status" -> "ok",
-      "execution_count" -> 0,
-      "data" -> Map(
-        "text/plain" -> "res0: Array[Int] = Array(1, 2)\n"
-      )
-    ))
-
-    result should equal (expectedResult)
+    // The Scala 2.13 REPL emits a deprecation banner in front of the collect
+    // result (Array-implicit-conversion deprecation). Assert via substring so
+    // both 2.12 (bare line) and 2.13 (banner + line) pass.
+    val text = ((result \ "data") \ "text/plain").extract[String]
+    text should include (s"${valPrefix}res0: Array[Int] = Array(1, 2)")
+    (result \ "status").extract[String] should equal ("ok")
+    (result \ "execution_count").extract[Int] should equal (0)
   }
 
   it should "do table magic" in withSession { session =>

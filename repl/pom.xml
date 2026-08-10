@@ -205,6 +205,15 @@
                   <include>org.json4s:json4s-ast_${scala.binary.version}</include>
                   <include>org.json4s:json4s-core_${scala.binary.version}</include>
                   <include>org.json4s:json4s-jackson_${scala.binary.version}</include>
+                  <!-- json4s 4.x moved `JsonMethods` into a separate
+                       `json4s-jackson-core` module; without shading it too,
+                       the shaded jar is missing `JsonMethods.class` and
+                       PythonInterpreter fails at runtime with
+                       NoClassDefFoundError. The include is scoped to the
+                       artifactId prefix so builds against older json4s
+                       versions (which don't publish this module) still
+                       succeed. -->
+                  <include>org.json4s:json4s-jackson-core_${scala.binary.version}</include>
                   <include>org.json4s:json4s-scalap_${scala.binary.version}</include>
                   <include>com.esotericsoftware:kryo-shaded</include>
                 </includes>

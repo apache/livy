@@ -169,6 +169,8 @@ class ZooKeeperManager(
     if (curatorClient.checkExists().forPath(key) == null) {
       Seq.empty[String]
     } else {
+      // Scala 2.13 leaves `.asScala` returning a `mutable.Buffer` that no
+      // longer widens implicitly to `Seq`; make the copy explicit.
       curatorClient.getChildren.forPath(key).asScala.toSeq
     }
   }

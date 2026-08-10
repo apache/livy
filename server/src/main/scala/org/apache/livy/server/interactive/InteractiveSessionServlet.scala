@@ -118,7 +118,9 @@ class InteractiveSessionServlet(
 
     new SessionInfo(session.id, session.name.orNull, session.appId.orNull,
       session.owner, session.state.toString, session.kind.toString,
-      session.appInfo.asJavaMap, logs.asJava, session.ttl.orNull,
+      // `.toSeq.asJava` -- the `logs` view is only `Iterable` under Scala 2.13,
+      // whereas `SessionInfo` requires a `java.util.List`.
+      session.appInfo.asJavaMap, logs.toSeq.asJava, session.ttl.orNull,
       session.idleTimeout.orNull, session.driverMemory.orNull,
       session.driverCores.getOrElse(0), session.executorMemory.orNull,
       session.executorCores.getOrElse(0), conf, archives,

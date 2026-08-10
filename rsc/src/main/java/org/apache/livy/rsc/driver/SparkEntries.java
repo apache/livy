@@ -24,7 +24,6 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.SparkSession$;
 import org.apache.spark.sql.hive.HiveContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +67,7 @@ public class SparkEntries {
             SparkConf conf = sc().getConf();
             String catalog = conf.get("spark.sql.catalogImplementation", "in-memory").toLowerCase();
 
-            if (catalog.equals("hive") && SparkSession$.MODULE$.hiveClassesArePresent()) {
+            if (catalog.equals("hive") && hiveClassesArePresent()) {
               ClassLoader loader = Thread.currentThread().getContextClassLoader() != null ?
                 Thread.currentThread().getContextClassLoader() : getClass().getClassLoader();
               if (loader.getResource("hive-site.xml") == null) {
@@ -134,5 +133,35 @@ public class SparkEntries {
     if (sc != null) {
       sc.stop();
     }
+  }
+
+  /**
+   * Determine whether Spark's Hive support classes are present on the classpath.
+   *
+   * <p>Spark 3 exposed this as {@code org.apache.spark.sql.SparkSession$.hiveClassesArePresent()}.
+   * In Spark 4 {@code SparkSession} became abstract and the concrete companion moved to
+   * {@code org.apache.spark.sql.classic.SparkSession$}. We try both, in the Spark 4 location
+   * first, so that a single Livy build compiled against Spark 3 still resolves the method at
+   * runtime on either Spark version.
+   */
+  private static boolean hiveClassesArePresent() {
+    String[] candidates = {
+        "org.apache.spark.sql.classic.SparkSession$", // Spark 4+
+        "org.apache.spark.sql.SparkSession$"          // Spark 3
+    };
+    for (String cls : candidates) {
+      try {
+        Class<?> companion = Class.forName(cls);
+        Object module = companion.getField("MODULE$").get(null);
+        return (Boolean) companion.getMethod("hiveClassesArePresent").invoke(module);
+      } catch (ClassNotFoundException | NoSuchFieldException | NoSuchMethodException e) {
+        // Try the next candidate.
+      } catch (ReflectiveOperationException e) {
+        LOG.warn("Failed to invoke {}.hiveClassesArePresent()", cls, e);
+        return false;
+      }
+    }
+    LOG.warn("Could not locate SparkSession#hiveClassesArePresent on the classpath");
+    return false;
   }
 }

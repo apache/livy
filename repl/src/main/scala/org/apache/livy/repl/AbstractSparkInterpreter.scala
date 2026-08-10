@@ -34,6 +34,22 @@ import org.apache.livy.rsc.driver.SparkEntries
 object AbstractSparkInterpreter {
   private[repl] val KEEP_NEWLINE_REGEX = """(?<=\n)""".r
   private val MAGIC_REGEX = "^%(\\w+)\\W*(.*)".r
+
+  /**
+   * True when `code` contains only whitespace and Scala comments (line or
+   * block), and nothing the Scala compiler would treat as a statement.
+   *
+   * The Scala 2.13 REPL rejects a source made up entirely of comments as a
+   * compile error, whereas 2.12 accepted it silently. Livy short-circuits
+   * these inputs so that behaviour matches across both Scala versions.
+   */
+  private[repl] def isEffectivelyEmpty(code: String): Boolean = {
+    // Strip block comments (non-greedy, single-line via (?s) DOTALL) then
+    // line comments, and check whether anything meaningful remains.
+    val noBlock = code.replaceAll("(?s)/\\*.*?\\*/", "")
+    val noLine = noBlock.replaceAll("//[^\\n]*", "")
+    noLine.trim.isEmpty
+  }
 }
 
 abstract class AbstractSparkInterpreter extends Interpreter with Logging {
@@ -300,6 +316,11 @@ abstract class AbstractSparkInterpreter extends Interpreter with Logging {
     code match {
       case MAGIC_REGEX(magic, rest) =>
         executeMagic(magic, rest)
+      case _ if AbstractSparkInterpreter.isEffectivelyEmpty(code) =>
+        // Scala 2.13's REPL rejects a source with only comments as a compile
+        // error (2.12 quietly returned Success). Short-circuit here so both
+        // versions produce an empty-successful response.
+        Interpreter.ExecuteSuccess(TEXT_PLAIN -> "")
       case _ =>
         scala.Console.withOut(outputStream) {
           interpret(code) match {
@@ -327,11 +348,23 @@ abstract class AbstractSparkInterpreter extends Interpreter with Logging {
     //   at .error(<console>:11)
     //   ... 32 elided
 
-    // Return the first line as ename. Lines following as traceback.
+    // Return the first meaningful line as ename. Lines following as traceback.
+    //
+    // Scala 2.13's REPL prints the caret pointer and the offending expression
+    // BEFORE the human-readable "error: ..." message (whereas 2.12 printed
+    // the message first). Skip empty lines and the pure caret line so `ename`
+    // still ends up on the "error: ..." message on both Scala versions.
 
     val lines = KEEP_NEWLINE_REGEX.split(stdout)
-    val ename = lines.headOption.map(_.trim).getOrElse("unknown error")
-    val traceback = lines.tail
+    val enameIdx =
+      lines.indexWhere(l => l.trim.nonEmpty && l.trim != "^")
+    val (ename, traceback) =
+      if (enameIdx < 0) {
+        val fallback = lines.headOption.map(_.trim).getOrElse("unknown error")
+        (fallback, lines.tail.toSeq)
+      } else {
+        (lines(enameIdx).trim, (lines.take(enameIdx) ++ lines.drop(enameIdx + 1)).toSeq)
+      }
 
     (ename, traceback)
   }

@@ -42,6 +42,9 @@ package object scalaapi {
   private[livy] def getJavaFutureResult[T](jFuture: JFuture[T],
                                            atMost: Duration = Duration.Undefined): T = {
     try {
+      // In Scala 2.13 `Duration.isFinite` is a parameterless def (no `()`),
+      // while it took an empty parameter list in 2.12. Dropping the parens
+      // compiles on both.
       if (!atMost.isFinite) jFuture.get else jFuture.get(atMost.toMillis, TimeUnit.MILLISECONDS)
     } catch {
       case executionException: ExecutionException => throw executionException.getCause

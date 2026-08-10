@@ -193,7 +193,13 @@ public class TestSparkClient {
         // state changes.
         assertFalse(((JobHandleImpl<Void>)handle).changeState(JobHandle.State.SENT));
 
-        verify(listener).onJobStarted(handle);
+        // Note: onJobStarted is not asserted here. A synchronously-throwing Job like
+        // Failure can transition STARTED -> FAILED on the driver before the client
+        // thread finishes addListener(), in which case AbstractJobHandle.addListener
+        // only replays the current (final) state and never fires onJobStarted. This
+        // was already possible on Spark 3 and became easy to hit on Spark 4 (faster
+        // Netty 4.2 dispatch under the loopback bindings used by the -Pspark4 test
+        // matrix). onJobFailed is the state we actually care about verifying.
         verify(listener).onJobFailed(same(handle), any(Throwable.class));
       }
     });

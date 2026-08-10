@@ -205,6 +205,7 @@ class LivyExecuteStatementOperation(
     }
     val res = new mutable.ListBuffer[String]
     while (fetchNext(res)) {}
-    res
+    // Scala 2.13 no longer widens a mutable Buffer to Seq implicitly.
+    res.toSeq
   }
 }

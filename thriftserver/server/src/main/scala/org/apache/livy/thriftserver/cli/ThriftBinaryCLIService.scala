@@ -108,11 +108,16 @@ class ThriftBinaryCLIService(override val cliService: LivyCLIService, val oomHoo
         .protocolFactory(new TBinaryProtocol.Factory)
         .inputProtocolFactory(
           new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
-        .requestTimeout(requestTimeout)
-        .requestTimeoutUnit(TimeUnit.MILLISECONDS)
-        .beBackoffSlotLength(beBackoffSlotLength)
-        .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
         .executorService(executorService)
+      // `requestTimeout`, `requestTimeoutUnit`, `beBackoffSlotLength` and
+      // `beBackoffSlotLengthUnit` are present in the libthrift 0.9.x that Hive 3
+      // ships with (the Spark 3 profile) but were removed from libthrift 0.16.x
+      // that Spark 4 brings in transitively. Invoke them reflectively so the
+      // same code compiles and runs against both versions.
+      applyOptionalArg(sargs, "requestTimeout", Integer.TYPE, Int.box(requestTimeout))
+      applyOptionalArg(sargs, "requestTimeoutUnit", classOf[TimeUnit], TimeUnit.MILLISECONDS)
+      applyOptionalArg(sargs, "beBackoffSlotLength", Integer.TYPE, Int.box(beBackoffSlotLength))
+      applyOptionalArg(sargs, "beBackoffSlotLengthUnit", classOf[TimeUnit], TimeUnit.MILLISECONDS)
       // TCP Server
       server = new TThreadPoolServer(sargs)
       server.setServerEventHandler(new TServerEventHandler() {
@@ -173,5 +178,27 @@ class ThriftBinaryCLIService(override val cliService: LivyCLIService, val oomHoo
     server.stop()
     server = null
     info("Thrift server has stopped")
+  }
+
+  /**
+   * Invoke a `TThreadPoolServer.Args` builder method by name if it exists on
+   * the runtime libthrift version. Silently skip it if the method is missing:
+   * libthrift 0.16 (pulled in by the Spark 4 profile via spark-hive) dropped
+   * the login-timeout / backoff-slot builders that the Spark 3 profile's
+   * libthrift 0.9.3 still exposes.
+   */
+  private def applyOptionalArg(
+      args: TThreadPoolServer.Args,
+      methodName: String,
+      paramType: Class[_],
+      value: AnyRef): Unit = {
+    try {
+      val m = classOf[TThreadPoolServer.Args].getMethod(methodName, paramType)
+      m.invoke(args, value)
+    } catch {
+      case _: NoSuchMethodException =>
+        debug(s"TThreadPoolServer.Args.$methodName not present in the runtime " +
+          s"libthrift; skipping (expected on libthrift >= 0.14).")
+    }
   }
 }

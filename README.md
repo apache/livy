@@ -92,9 +92,20 @@ version of Spark without needing to rebuild.
 
 ### Build Profiles
 
-| Flag           | Purpose                                    |
-|----------------|--------------------------------------------|
-| -Phadoop2      | Choose Hadoop2 based build dependencies    |
-| -Pthriftserver | Build and test Livy Thrift Server modules  |
-| -Pspark3       | Choose Spark 3.x based build dependencies  |
-| -Pscala-2.12   | Choose Scala 2.12 based build dependencies |
+| Flag           | Purpose                                                                            |
+|----------------|------------------------------------------------------------------------------------|
+| -Phadoop2      | Choose Hadoop2 based build dependencies                                            |
+| -Pthriftserver | Build and test Livy Thrift Server modules                                          |
+| -Pspark3       | Choose Spark 3.x based build dependencies                                          |
+| -Pspark4       | Choose Spark 4.x (4.1.2) based build dependencies (requires JDK 17+ + Scala 2.13)  |
+| -Pscala-2.12   | Choose Scala 2.12 based build dependencies                                         |
+| -Pscala-2.13   | Choose Scala 2.13 based build dependencies (used with `-Pspark4`)                  |
+
+Example — build against Spark 4:
+
+```
+mvn package -Pspark4 -Pscala-2.13
+```
+
+> **Note**: `-Pspark4` requires JDK 17 or JDK 21 and pulls in Scala 2.13 and Hadoop 3.4.1.
+> JDK 8 and JDK 11, and Scala 2.12, are not supported by Spark 4.
