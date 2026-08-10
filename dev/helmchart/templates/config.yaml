@@ -1,0 +1,84 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "livycluster.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "livycluster.name" . }}
+    helm.sh/chart: {{ include "livycluster.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  livy.conf: |-
+    livy.file.local-dir-whitelist={{ .Values.livy.localDirWhitelist }}
+    livy.server.kubernetes.ingress.className=nginx
+    livy.server.kubernetes.ingress.create=true
+    livy.server.kubernetes.ingress.host={{ .Values.clusterHost }}
+    livy.server.kubernetes.ingress.protocol=https
+    livy.server.kubernetes.ingress.tls.secretName={{ .Values.ingress.tls.secretName }}
+    livy.server.kubernetes.grafana.loki.enabled={{ .Values.grafana.loki.enabled }}
+    livy.server.kubernetes.grafana.url={{ .Values.grafana.url }}
+    livy.server.kubernetes.grafana.loki.datasource={{ .Values.grafana.lokiDatasource }}
+    livy.server.kubernetes.grafana.timeRange={{ .Values.grafana.timeRange }}
+    livy.server.port=8998
+    livy.server.recovery.mode=recovery
+    livy.server.recovery.state-store.url=/tmp/livy/store
+    livy.server.recovery.state-store=filesystem
+    livy.server.session.state-retain.sec=4h
+    livy.spark.deploy-mode=cluster
+    livy.spark.master=k8s://kubernetes.default.svc.cluster.local:443
+    livy.ui.basePath=/livy
+    livy.ui.history-server-url={{ include "livycluster.historyServerUrl" . }}
+  livy-client.conf: |-
+    livy.rsc.client.connect.timeout=600s
+    livy.rsc.rpc.server.address={{ include "livycluster.fullname" . }}-0.{{ include "livycluster.fullname" . }}-headless.{{ .Release.Namespace }}.svc.cluster.local
+    livy.rsc.server.connect.timeout=600s
+  log4j.properties: |-
+    log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.target=System.err
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.logger.org.eclipse.jetty=WARN
+    log4j.rootCategory={{ .Values.livy.logLevel }}, console
+  spark-defaults.conf: |-
+    spark.driver.cores={{ .Values.spark.driverCores }}
+    spark.driver.extraJavaOptions=--add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dio.netty.tryReflectionSetAccessible=true
+    spark.driver.memory={{ .Values.spark.driverMemory }}
+    spark.eventLog.dir=file:///tmp/livy/store
+    spark.eventLog.enabled=true
+    spark.executor.extraJavaOptions=--add-opens java.base/jdk.internal.misc=ALL-UNNAMED -Dio.netty.tryReflectionSetAccessible=true
+    spark.kryo.registrationRequired=false
+    spark.kryo.unsafe=false
+    spark.kubernetes.authenticate.driver.serviceAccountName={{ include "livycluster.fullname" . }}-spark
+    spark.kubernetes.container.image.pullPolicy={{ .Values.image.spark.pullPolicy }}
+    spark.kubernetes.container.image={{ .Values.image.spark.repository }}:{{ include "livycluster.sparkImageTag" . }}
+    spark.kubernetes.driver.label.name=driver
+    spark.kubernetes.driver.volumes.persistentVolumeClaim.datafiles.mount.path=/tmp/livy/store
+    spark.kubernetes.driver.volumes.persistentVolumeClaim.datafiles.options.claimName={{ include "livycluster.fullname" . }}
+    spark.kubernetes.executor.label.name=executor
+    spark.kubernetes.executor.volumes.persistentVolumeClaim.datafiles.mount.path=/tmp/livy/store
+    spark.kubernetes.executor.volumes.persistentVolumeClaim.datafiles.options.claimName={{ include "livycluster.fullname" . }}
+    spark.kubernetes.file.upload.path=file:///tmp/livy/store
+    spark.kubernetes.namespace={{ .Release.Namespace }}
+    spark.network.timeout=800
+    spark.serializer=org.apache.spark.serializer.KryoSerializer
+    spark.speculation=false
+    spark.sql.broadcastTimeout=1200
+    spark.sql.warehouse.dir=/opt/spark/spark-warehouse

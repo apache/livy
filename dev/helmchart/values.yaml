@@ -1,0 +1,134 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Version alignment with pom.xml when built using:
+#   mvn -Pthriftserver -Pscala-2.12 -Pspark3 package
+livyVersion: "1.0.0-SNAPSHOT"
+scalaBinaryVersion: "2.12"
+sparkVersion: "3.5.6"
+
+# Hostname used for ingress, TLS, livy.conf, and /etc/hosts.
+clusterHost: my-cluster.example.com
+
+# Livy configuration surfaced through the chart ConfigMap.
+livy:
+  localDirWhitelist: "/opt/jars"
+  logLevel: INFO
+
+image:
+  livy:
+    repository: your_repository/livy
+    # Leave empty to default to spark<sparkVersion> (e.g. spark3.5.6).
+    tag: ""
+    pullPolicy: IfNotPresent
+  spark:
+    repository: your_repository/spark-py
+    # Leave empty to default to v<sparkVersion> (e.g. v3.5.6).
+    tag: ""
+    pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+debug:
+  enabled: true
+  port: 9010
+
+spark:
+  driverCores: "1"
+  driverMemory: "1g"
+
+tags:
+  ingress: true
+
+clusterIssuers:
+  - name: selfsigning-issuer
+    spec:
+      selfSigned: {}
+
+defaultCertificate:
+  enabled: true
+  issuer: selfsigning-issuer
+  issuerKind: ClusterIssuer
+  secretName: ingress-default-tls
+
+cert-manager:
+  enabled: true
+  installCRDs: true
+  ingressShim:
+    defaultIssuerName: selfsigning-issuer
+    defaultIssuerKind: ClusterIssuer
+
+ingress-nginx:
+  enabled: true
+  controller:
+    allowSnippetAnnotations: true
+    # Set default-ssl-certificate at install time, for example:
+    # --set ingress-nginx.controller.extraArgs.default-ssl-certificate=livy-dev/ingress-default-tls
+    extraArgs: {}
+    service:
+      loadBalancerIP: 127.0.0.1
+      loadBalancerSourceRanges: []
+
+grafana:
+  loki:
+    enabled: false
+  url: "http://localhost:3000"
+  lokiDatasource: loki
+  timeRange: 6h
+
+nameOverride: ""
+fullnameOverride: ""
+
+rbac:
+  enabled: true
+  serviceAccounts: []
+  roles: []
+  bindings: []
+
+service:
+  type: ClusterIP
+  port: 80
+  name: ""
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+  path: /livy/?(.*)
+  tls:
+    secretName: ingress-default-tls
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  annotations: {}
+  existingClaim: ""
+  subPath: ""
+
+storageClasses: []
+
+resources: {}
+
+nodeSelector: {}
+
+affinity: {}
+
+tolerations: []
+
+global: {}

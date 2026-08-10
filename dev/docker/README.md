@@ -1,4 +1,7 @@
 # Livy with standalone Spark Cluster
+
+For a local Kubernetes development environment, see [../helmchart/README.md](../helmchart/README.md).
+
 ## Pre-requisite
 Following steps use Ubuntu as development environment but most of the instructions can be modified to fit another OS as well.
 * Install wsl if on windows, instructions available [here](https://ubuntu.com/tutorials/install-ubuntu-on-wsl2-on-windows-11-with-gui-support)

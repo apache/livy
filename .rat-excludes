@@ -30,3 +30,4 @@ logs/*
 docs/**/*.html
 docs/**/JB/**
 venv/*
+dev/helmchart/Chart.lock

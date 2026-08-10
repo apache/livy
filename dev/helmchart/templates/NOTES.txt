@@ -1,0 +1,40 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+The Livy server has been installed.
+Check its status by running:
+  kubectl -n {{ .Release.Namespace }} get pods -w
+Connect to the Livy Web UI:
+{{- if .Values.ingress.enabled }}
+    # Open in browser:
+    #  https://{{ .Values.clusterHost }}/livy/ui
+    #
+    # If TLS fails on first install, set ingress-nginx default certificate to:
+    #  {{ include "livycluster.defaultTlsCertificate" . }}
+{{- else }}
+    kubectl -n {{ .Release.Namespace }} port-forward {{ include "livycluster.fullname" . }}-0 8998
+    # Open in browser: http://localhost:8998
+{{- end }}
+{{- if .Values.debug.enabled }}
+
+Remote debugging is enabled on port {{ .Values.debug.port }}.
+{{- end }}
+{{- if .Values.grafana.loki.enabled }}
+
+Grafana Loki integration is enabled. Open {{ .Values.grafana.url }} and use datasource
+"{{ .Values.grafana.lokiDatasource }}" to inspect Spark driver and executor logs.
+{{- end }}
