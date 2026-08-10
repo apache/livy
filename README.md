@@ -78,12 +78,12 @@ You can also use the provided [Dockerfile](./dev/docker/livy-dev-base/Dockerfile
 git clone https://github.com/apache/livy.git
 cd livy
 docker build -t livy-ci dev/docker/livy-dev-base/
-docker run --rm -it -v $(pwd):/workspace -v $HOME/.m2:/root/.m2 livy-ci mvn package -Pspark3 -Pscala-2.12
+docker run --rm -it -v $(pwd):/workspace -v $HOME/.m2:/root/.m2 livy-ci mvn package
 ```
 
 > **Note**: The `docker run` command maps the maven repository to your host machine's maven cache so subsequent runs will not need to download dependencies.
 
-By default Livy is built against Apache Spark 3.3.4, but the version of Spark used when running
+By default Livy is built against Apache Spark 4.1.2 with Scala 2.13, but the version of Spark used when running
 Livy does not need to match the version used to build Livy. Livy internally handles the differences
 between different Spark versions.
 
@@ -92,9 +92,19 @@ version of Spark without needing to rebuild.
 
 ### Build Profiles
 
-| Flag           | Purpose                                    |
-|----------------|--------------------------------------------|
-| -Phadoop2      | Choose Hadoop2 based build dependencies    |
-| -Pthriftserver | Build and test Livy Thrift Server modules  |
-| -Pspark3       | Choose Spark 3.x based build dependencies  |
-| -Pscala-2.12   | Choose Scala 2.12 based build dependencies |
+| Flag           | Purpose                                                                            |
+|----------------|------------------------------------------------------------------------------------|
+| -Phadoop2      | Choose Hadoop2 based build dependencies                                            |
+| -Pthriftserver | Build and test Livy Thrift Server modules                                          |
+| -Pspark3       | Choose Spark 3.x based build dependencies (use with `-Pscala-2.12`)                |
+| -Pscala-2.12   | Choose Scala 2.12 based build dependencies (use with `-Pspark3`)                   |
+
+Example — build against Spark 3:
+
+```
+mvn package -Pspark3 -Pscala-2.12
+```
+
+> **Note**: The default build targets Spark 4.1.2 and requires JDK 17 or JDK 21 with Scala 2.13 and Hadoop 3.4.1.
+> JDK 8, JDK 11 and Scala 2.12 are not supported by Spark 4. Supported Python
+> versions for Spark 4.1 are 3.10 – 3.14.

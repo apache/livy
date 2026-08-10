@@ -108,11 +108,17 @@ class ThriftBinaryCLIService(override val cliService: LivyCLIService, val oomHoo
         .protocolFactory(new TBinaryProtocol.Factory)
         .inputProtocolFactory(
           new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
-        .requestTimeout(requestTimeout)
-        .requestTimeoutUnit(TimeUnit.MILLISECONDS)
-        .beBackoffSlotLength(beBackoffSlotLength)
-        .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
         .executorService(executorService)
+      // `requestTimeout`, `requestTimeoutUnit`, `beBackoffSlotLength` and
+      // `beBackoffSlotLengthUnit` are present in the libthrift that Livy
+      // compiles against (0.9.3, pinned in the root pom) and in the versions
+      // Spark 3 brings in transitively, but were removed in libthrift 0.16.0
+      // (transitively pulled in by Spark 4). Invoke them reflectively so the
+      // same code compiles and runs on both classpaths.
+      applyOptionalArg(sargs, "requestTimeout", Integer.TYPE, Int.box(requestTimeout))
+      applyOptionalArg(sargs, "requestTimeoutUnit", classOf[TimeUnit], TimeUnit.MILLISECONDS)
+      applyOptionalArg(sargs, "beBackoffSlotLength", Integer.TYPE, Int.box(beBackoffSlotLength))
+      applyOptionalArg(sargs, "beBackoffSlotLengthUnit", classOf[TimeUnit], TimeUnit.MILLISECONDS)
       // TCP Server
       server = new TThreadPoolServer(sargs)
       server.setServerEventHandler(new TServerEventHandler() {
@@ -173,5 +179,27 @@ class ThriftBinaryCLIService(override val cliService: LivyCLIService, val oomHoo
     server.stop()
     server = null
     info("Thrift server has stopped")
+  }
+
+  /**
+   * Invoke a `TThreadPoolServer.Args` builder method by name if it exists on
+   * the runtime libthrift version. Silently skip it if the method is missing:
+   * libthrift 0.16.0 (pulled in by the Spark 4 profile via spark-hive)
+   * dropped the login-timeout / backoff-slot builders that pre-0.16 releases
+   * -- including Livy's pinned 0.9.3 compile dependency -- still expose.
+   */
+  private def applyOptionalArg(
+      args: TThreadPoolServer.Args,
+      methodName: String,
+      paramType: Class[_],
+      value: AnyRef): Unit = {
+    try {
+      val m = classOf[TThreadPoolServer.Args].getMethod(methodName, paramType)
+      m.invoke(args, value)
+    } catch {
+      case _: NoSuchMethodException =>
+        debug(s"TThreadPoolServer.Args.$methodName not present in the runtime " +
+          s"libthrift; skipping (removed in libthrift 0.16.0).")
+    }
   }
 }

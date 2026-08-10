@@ -27,30 +27,34 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
 
   implicit val formats = DefaultFormats
 
+  // `optionalValPrefix` (Scala-2.13's `val ` before bound-variable output, empty on
+  // 2.12) is provided by `BaseInterpreterSpec` so the same source works
+  // against both scala-2.12 and scala-2.13 builds.
+
   override def createInterpreter(): Interpreter =
     new SparkInterpreter(new SparkConf())
 
   it should "execute `1 + 2` == 3" in withInterpreter { interpreter =>
     val response = interpreter.execute("1 + 2")
     response should equal (Interpreter.ExecuteSuccess(
-      TEXT_PLAIN -> "res0: Int = 3\n"
+      TEXT_PLAIN -> s"${optionalValPrefix}res0: Int = 3\n"
     ))
   }
 
   it should "execute multiple statements" in withInterpreter { interpreter =>
     var response = interpreter.execute("val x = 1")
     response should equal (Interpreter.ExecuteSuccess(
-      TEXT_PLAIN -> "x: Int = 1\n"
+      TEXT_PLAIN -> s"${optionalValPrefix}x: Int = 1\n"
     ))
 
     response = interpreter.execute("val y = 2")
     response should equal (Interpreter.ExecuteSuccess(
-      TEXT_PLAIN -> "y: Int = 2\n"
+      TEXT_PLAIN -> s"${optionalValPrefix}y: Int = 2\n"
     ))
 
     response = interpreter.execute("x + y")
     response should equal (Interpreter.ExecuteSuccess(
-      TEXT_PLAIN -> "res0: Int = 3\n"
+      TEXT_PLAIN -> s"${optionalValPrefix}res0: Int = 3\n"
     ))
   }
 
@@ -63,9 +67,23 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
         |
         |x + y
       """.stripMargin)
-    response should equal(Interpreter.ExecuteSuccess(
-      TEXT_PLAIN -> "x: Int = 1\ny: Int = 2\nres2: Int = 3\n"
-    ))
+    // The Scala REPL is using an internal counter
+    // whose exact value depends on how the compiler rewrites the block:
+    // Scala 2.12 keeps a per-line counter (so `x`, `y`, then `x + y` yields
+    // `res2`), while Scala 2.13 keeps a per-execution counter (yielding
+    // `res0`). Neither of those is a semantic guarantee -- we just want to
+    // confirm the interpreter bound `x`, `y`, and produced an `Int = 3`
+    // result under *some* `resN` name.
+    val text = response match {
+      case Interpreter.ExecuteSuccess(json) =>
+        (json \\ TEXT_PLAIN).extract[String]
+      case other => fail(s"Expected ExecuteSuccess, got $other")
+    }
+    val expected =
+      s"${optionalValPrefix}x: Int = 1\n" +
+      s"${optionalValPrefix}y: Int = 2\n" +
+      s"${optionalValPrefix}res\\d+: Int = 3\n"
+    text should fullyMatch regex expected
   }
 
   it should "do table magic" in withInterpreter { interpreter =>
@@ -96,7 +114,7 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
       """.stripMargin)
 
     response should equal(Interpreter.ExecuteSuccess(
-      TEXT_PLAIN -> "res0: Int = 3\n"
+      TEXT_PLAIN -> s"${optionalValPrefix}res0: Int = 3\n"
     ))
   }
 
@@ -132,12 +150,20 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
     val response = interpreter.execute(
       """sc.parallelize(0 to 1).map { i => i+1 }.collect""".stripMargin)
 
-    response should equal(Interpreter.ExecuteSuccess(
-      TEXT_PLAIN -> "res0: Array[Int] = Array(1, 2)\n"
-    ))
+    // 2.13's REPL prints a deprecation banner ahead of the collect result
+    // because `Array` implicit conversion changed; check with contain-like
+    // substrings rather than exact equality so both versions pass.
+    val text = response match {
+      case Interpreter.ExecuteSuccess(json) => (json \\ TEXT_PLAIN).extract[String]
+      case other => fail(s"Expected ExecuteSuccess, got $other")
+    }
+    text should include (s"${optionalValPrefix}res0: Array[Int] = Array(1, 2)")
   }
 
   it should "handle statements ending with comments" in withInterpreter { interpreter =>
+    val expectedResponse =
+      Interpreter.ExecuteSuccess(TEXT_PLAIN -> s"${optionalValPrefix}r: Int = 1\n")
+
     // Test statements with only comments
     var response = interpreter.execute("""// comment""")
     response should equal(Interpreter.ExecuteSuccess(TEXT_PLAIN -> ""))
@@ -154,7 +180,7 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
       """val r = 1
         |// comment
       """.stripMargin)
-    response should equal(Interpreter.ExecuteSuccess(TEXT_PLAIN -> "r: Int = 1\n"))
+    response should equal(expectedResponse)
 
     response = interpreter.execute(
       """val r = 1
@@ -163,7 +189,7 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
         |comment
         |*/
       """.stripMargin)
-    response should equal(Interpreter.ExecuteSuccess(TEXT_PLAIN -> "r: Int = 1\n"))
+    response should equal(expectedResponse)
 
     // Test statements ending with a mix of single line and multi-line comments
     response = interpreter.execute(
@@ -175,7 +201,7 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
         |*/
         |// comment
       """.stripMargin)
-    response should equal(Interpreter.ExecuteSuccess(TEXT_PLAIN -> "r: Int = 1\n"))
+    response should equal(expectedResponse)
 
     response = interpreter.execute(
       """val r = 1
@@ -185,7 +211,7 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
         |comment
         |*/
       """.stripMargin)
-    response should equal(Interpreter.ExecuteSuccess(TEXT_PLAIN -> "r: Int = 1\n"))
+    response should equal(expectedResponse)
 
     // Make sure incomplete statement is still returned as incomplete statement.
     response = interpreter.execute("sc.")
@@ -205,12 +231,14 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
 
     try {
       response should equal(
-        Interpreter.ExecuteSuccess(TEXT_PLAIN -> s"r: String = \n$stringWithComment\n"))
+        Interpreter.ExecuteSuccess(
+          TEXT_PLAIN -> s"${optionalValPrefix}r: String = \n$stringWithComment\n"))
     } catch {
       case _: Exception =>
         response should equal(
-          // Scala 2.11 doesn't have a " " after "="
-          Interpreter.ExecuteSuccess(TEXT_PLAIN -> s"r: String =\n$stringWithComment\n"))
+          // Older Scala versions (2.11) omit the space after `=`.
+          Interpreter.ExecuteSuccess(
+            TEXT_PLAIN -> s"${optionalValPrefix}r: String =\n$stringWithComment\n"))
     }
   }
 

@@ -570,8 +570,13 @@ class BinaryThriftServerSuite extends ThriftServerBaseTest with CommonThriftTest
         }
       }
       val message = caught.getMessage
-      assert(message.contains("Database 'invalid_database' not found") ||
-        message.contains("The schema `invalid_database` cannot be found"))
+      // Spark 3: "Database 'invalid_database' not found"
+      // Spark 3.3+: "The schema `invalid_database` cannot be found"
+      // Spark 4: "[SCHEMA_NOT_FOUND] The schema `spark_catalog`.`invalid_database` cannot be found"
+      assert(message.contains("invalid_database") && (
+        message.contains("not found") ||
+        message.contains("cannot be found") ||
+        message.contains("SCHEMA_NOT_FOUND")))
     }
   }
 
