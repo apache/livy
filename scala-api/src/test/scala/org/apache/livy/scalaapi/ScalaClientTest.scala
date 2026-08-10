@@ -37,6 +37,7 @@ import org.scalatest.{BeforeAndAfter, FunSuite}
 import org.scalatest.concurrent.ScalaFutures
 
 import org.apache.livy.LivyBaseUnitTestSuite
+import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.RSCConf.Entry._
 
 class ScalaClientTest extends FunSuite
@@ -188,6 +189,7 @@ object ScalaClientTest {
     }
     conf.put(CLIENT_SHUTDOWN_TIMEOUT.key(), "30s")
     conf.put(LIVY_JARS.key, "")
+    conf.put(RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST)
     conf
   }
 

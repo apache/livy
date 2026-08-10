@@ -34,6 +34,7 @@ import static org.junit.Assert.*;
 import org.apache.livy.Job;
 import org.apache.livy.LivyClient;
 import org.apache.livy.LivyClientBuilder;
+import org.apache.livy.client.common.TestUtils;
 import static org.apache.livy.rsc.RSCConf.Entry.*;
 
 public class ThriftSessionTest {
@@ -53,6 +54,7 @@ public class ThriftSessionTest {
     conf.put(SparkLauncher.SPARK_MASTER, "local");
     conf.put("spark.sql.warehouse.dir", warehouse);
     conf.put("spark.sql.catalogImplementation", "in-memory");
+    conf.put(RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST);
 
     livy = new LivyClientBuilder(false)
       .setURI(new URI("rsc:/"))

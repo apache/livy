@@ -30,6 +30,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.concurrent.Eventually._
 
 import org.apache.livy.LivyBaseUnitTestSuite
+import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.RSCConf
 import org.apache.livy.rsc.driver.{Statement, StatementState}
 import org.apache.livy.sessions._
@@ -39,7 +40,11 @@ abstract class BaseSessionSpec(kind: Kind)
 
   implicit val formats = DefaultFormats
 
-  private val rscConf = new RSCConf(new Properties()).set(RSCConf.Entry.SESSION_KIND, kind.toString)
+  private val rscConf = {
+    val props = new Properties()
+    props.setProperty(RSCConf.Entry.RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST)
+    new RSCConf(props).set(RSCConf.Entry.SESSION_KIND, kind.toString)
+  }
 
   private val sparkConf = new SparkConf()
 

@@ -36,6 +36,7 @@ import org.scalatest.concurrent.Eventually._
 
 import org.apache.livy.{LivyConf, Logging}
 import org.apache.livy.client.common.TestUtils
+import org.apache.livy.rsc.RSCConf
 import org.apache.livy.server.LivyServer
 
 private class MiniClusterConfig(val config: Map[String, String]) {
@@ -136,7 +137,10 @@ object MiniLivyMain extends MiniClusterBase {
       LivyConf.YARN_POLL_INTERVAL.key -> "500ms",
       LivyConf.RECOVERY_MODE.key -> "recovery",
       LivyConf.RECOVERY_STATE_STORE.key -> "filesystem",
-      LivyConf.RECOVERY_STATE_STORE_URL.key -> s"file://$configPath/state-store")
+      LivyConf.RECOVERY_STATE_STORE_URL.key -> s"file://$configPath/state-store",
+      LivyConf.SERVER_HOST.key -> TestUtils.TEST_BIND_HOST,
+      LivyConf.THRIFT_BIND_HOST.key -> TestUtils.TEST_BIND_HOST,
+      RSCConf.Entry.RPC_SERVER_ADDRESS.key() -> TestUtils.TEST_BIND_HOST)
     val thriftEnabled = sys.env.get("LIVY_TEST_THRIFT_ENABLED")
     if (thriftEnabled.nonEmpty && thriftEnabled.forall(_.toBoolean)) {
       baseConf + (LivyConf.THRIFT_SERVER_ENABLED.key -> "true")
@@ -237,6 +241,16 @@ class MiniCluster(config: Map[String, String]) extends Cluster with MiniClusterU
       "spark.executor.instances" -> "1",
       "spark.scheduler.minRegisteredResourcesRatio" -> "0.0",
       "spark.ui.enabled" -> "false",
+      "spark.driver.host" -> TestUtils.TEST_BIND_HOST,
+      "spark.yarn.appMasterEnv.SPARK_LOCAL_IP" -> TestUtils.TEST_BIND_HOST,
+      "spark.executorEnv.SPARK_LOCAL_IP" -> TestUtils.TEST_BIND_HOST,
+      // Propagate the host shell PATH into the YARN AM and executor
+      // containers so that native binaries the tests spawn (Rscript for
+      // SparkR, python for PySpark) resolve. YARN's default sanitised PATH
+      // otherwise omits /opt/homebrew/bin on macOS which causes RRunner and
+      // PythonRunner to fail with `error=2, No such file or directory`.
+      "spark.yarn.appMasterEnv.PATH" -> sys.env.getOrElse("PATH", ""),
+      "spark.executorEnv.PATH" -> sys.env.getOrElse("PATH", ""),
       SparkLauncher.DRIVER_MEMORY -> "512m",
       SparkLauncher.EXECUTOR_MEMORY -> "512m",
       SparkLauncher.DRIVER_EXTRA_JAVA_OPTIONS -> "-Dtest.appender=console",
@@ -343,7 +357,7 @@ class MiniCluster(config: Map[String, String]) extends Cluster with MiniClusterU
     pb.environment().put("LIVY_CONF_DIR", configDir.getAbsolutePath())
     pb.environment().put("HADOOP_CONF_DIR", configDir.getAbsolutePath())
     pb.environment().put("SPARK_CONF_DIR", _sparkConfigDir.getAbsolutePath())
-    pb.environment().put("SPARK_LOCAL_IP", "127.0.0.1")
+    pb.environment().put("SPARK_LOCAL_IP", TestUtils.TEST_BIND_HOST)
 
     val child = pb.start()
 

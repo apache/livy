@@ -24,6 +24,8 @@ import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.livy.LivyConf
 import org.apache.livy.LivyConf.{LIVY_SPARK_SCALA_VERSION, LIVY_SPARK_VERSION}
+import org.apache.livy.client.common.TestUtils
+import org.apache.livy.rsc.RSCConf
 import org.apache.livy.server.AccessManager
 import org.apache.livy.server.recovery.{SessionStore, StateStore}
 import org.apache.livy.sessions.InteractiveSessionManager
@@ -56,6 +58,7 @@ abstract class ThriftServerBaseTest extends FunSuite with BeforeAndAfterAll {
     Class.forName(classOf[HiveDriver].getCanonicalName)
     livyConf.set(LivyConf.THRIFT_TRANSPORT_MODE, mode.toString)
     livyConf.set(LivyConf.THRIFT_SERVER_PORT, port)
+    livyConf.set(RSCConf.Entry.RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST)
 
     // Set formatted Spark and Scala version into livy configuration, this will be used by
     // session creation.

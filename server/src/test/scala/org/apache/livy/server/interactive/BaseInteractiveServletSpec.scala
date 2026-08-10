@@ -24,6 +24,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.spark.launcher.SparkLauncher
 
 import org.apache.livy.LivyConf
+import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.RSCConf
 import org.apache.livy.server.BaseSessionServletSpec
 import org.apache.livy.sessions.{Kind, SessionKindModule, Spark}
@@ -65,6 +66,7 @@ abstract class BaseInteractiveServletSpec
     request.conf = extraConf ++ Map(
       RSCConf.Entry.LIVY_JARS.key() -> "",
       RSCConf.Entry.CLIENT_IN_PROCESS.key() -> inProcess.toString,
+      RSCConf.Entry.RPC_SERVER_ADDRESS.key() -> TestUtils.TEST_BIND_HOST,
       SparkLauncher.SPARK_MASTER -> "local",
       SparkLauncher.DRIVER_EXTRA_CLASSPATH -> classpath,
       SparkLauncher.EXECUTOR_EXTRA_CLASSPATH -> classpath

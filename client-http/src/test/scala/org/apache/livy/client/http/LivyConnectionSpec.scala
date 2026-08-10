@@ -30,6 +30,7 @@ import org.scalatest.Matchers._
 import org.scalatra.servlet.ScalatraListener
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
+import org.apache.livy.client.common.TestUtils
 import org.apache.livy.server.WebServer
 
 class LivyConnectionSpec extends FunSpecLike with BeforeAndAfterAll with LivyBaseUnitTestSuite {
@@ -64,7 +65,7 @@ class LivyConnectionSpec extends FunSpecLike with BeforeAndAfterAll with LivyBas
     def test(password: String, livyConf: LivyConf = new LivyConf()): Unit = {
       val username = "user name"
 
-      val server = new WebServer(livyConf, "0.0.0.0", 0)
+      val server = new WebServer(livyConf, TestUtils.TEST_BIND_HOST, 0)
       server.context.setSecurityHandler(basicAuth(username, password, "realm"))
       server.context.setResourceBase("src/main/org/apache/livy/server")
       server.context.setInitParameter(ScalatraListener.LifeCycleKey,

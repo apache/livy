@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import org.apache.livy.client.common.TestUtils;
 import org.apache.livy.rsc.FutureListener;
 import org.apache.livy.rsc.RSCConf;
 import org.apache.livy.rsc.Utils;
@@ -57,6 +58,7 @@ public class TestRpc {
   public void setUp() {
     closeables = new ArrayList<>();
     emptyConfig = new RSCConf(null);
+    emptyConfig.set(RPC_SERVER_ADDRESS, TestUtils.TEST_BIND_HOST);
   }
 
   @After

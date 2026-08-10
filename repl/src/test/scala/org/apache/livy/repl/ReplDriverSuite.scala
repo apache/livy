@@ -30,6 +30,7 @@ import org.scalatest.FunSuite
 import org.scalatest.concurrent.Eventually._
 
 import org.apache.livy._
+import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.{PingJob, RSCClient, RSCConf}
 import org.apache.livy.sessions.Spark
 
@@ -43,6 +44,7 @@ class ReplDriverSuite extends FunSuite with LivyBaseUnitTestSuite {
       .setConf(SparkLauncher.DRIVER_EXTRA_CLASSPATH, sys.props("java.class.path"))
       .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, sys.props("java.class.path"))
       .setConf(RSCConf.Entry.LIVY_JARS.key(), "")
+      .setConf(RSCConf.Entry.RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST)
       .setURI(new URI("rsc:/"))
       .setConf(RSCConf.Entry.DRIVER_CLASS.key(), classOf[ReplDriver].getName())
       .setConf(RSCConf.Entry.SESSION_KIND.key(), Spark.toString)
