@@ -21,6 +21,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import org.apache.livy.LivyBaseUnitTestSuite
+import org.apache.livy.test.ScalaVersionAware
 
 abstract class BaseInterpreterSpec extends AnyFlatSpec with Matchers with LivyBaseUnitTestSuite {
 

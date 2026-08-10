@@ -65,5 +65,20 @@ class SparkInterpreterSpec extends AnyFunSpec with Matchers with LivyBaseUnitTes
       ename shouldBe "java.lang.RuntimeException: message"
       traceback shouldBe expectedTraceback
     }
+
+    it("should skip leading caret lines in Scala 2.13 error format.") {
+      // The 2.13 REPL prints the caret and the offending expression BEFORE
+      // the human-readable "error: ..." line. `parseError` must advance past
+      // the caret line so `ename` still lands on the readable message.
+      val error =
+        """                                ^
+          |error: not found: value abcde
+          |""".stripMargin
+
+      val (ename, traceback) = interpreter.parseError(error)
+      ename shouldBe "error: not found: value abcde"
+      // The pure caret line is retained in the traceback rather than dropped.
+      traceback.exists(_.trim == "^") shouldBe true
+    }
   }
 }

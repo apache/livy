@@ -81,16 +81,15 @@
     <asynchttpclient.version>2.10.1</asynchttpclient.version>
     <hadoop.scope>compile</hadoop.scope>
     <slf4j.version>1.7.36</slf4j.version>
-    <spark.scala-2.12.version>3.3.4</spark.scala-2.12.version>
-    <spark.version>${spark.scala-2.12.version}</spark.version>
+    <spark.version>4.1.2</spark.version>
     <kubernetes.client.version>5.6.0</kubernetes.client.version>
     <hive.version>3.0.0</hive.version>
     <commons-codec.version>1.15</commons-codec.version>
     <commons-lang3.version>3.17.0</commons-lang3.version>
     <httpclient.version>4.5.14</httpclient.version>
     <httpcore.version>4.4.16</httpcore.version>
-    <jackson.version>2.12.7</jackson.version>
-    <jackson-databind.version>2.12.7.1</jackson-databind.version>
+    <jackson.version>2.18.2</jackson.version>
+    <jackson-databind.version>2.18.2</jackson-databind.version>
     <jacoco.version>0.8.13</jacoco.version>
     <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
     <jetty.version>9.4.56.v20240826</jetty.version>
@@ -103,7 +102,10 @@
          HealthCheckFilter at runtime (the class moved in Dropwizard 4.x). -->
     <metrics.version>4.2.19</metrics.version>
     <mockito.version>1.10.19</mockito.version>
-    <netty.version>4.1.86.Final</netty.version>
+    <!-- Spark 4.1.2 depends on Netty 4.2.7 and calls the new 4.2-only
+         `KQueueIoHandler`; pinning to a 4.1.x line here would let Livy's
+         `netty-all` win and hide that class from Spark's classpath. -->
+    <netty.version>4.2.7.Final</netty.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Scalatest 3.2.9 is required by Scalatra 2.8.x (needed for Scala
          2.13 support). All test suites are written against the 3.2 API,
@@ -113,7 +115,6 @@
          scalatest (e.g. 3.2.9.0 for scalatest 3.2.9). -->
     <scalatestplus.mockito.version>3.2.9.0</scalatestplus.mockito.version>
     <scalatra.version>2.8.4</scalatra.version>
-    <java.version>1.8</java.version>
     <owasp.version>12.1.9</owasp.version>
     <extraJavaTestArgs>
       -XX:+IgnoreUnrecognizedVMOptions
@@ -133,15 +134,19 @@
     <test.redirectToFile>true</test.redirectToFile>
     <execution.root>${user.dir}</execution.root>
     <spark.home>${execution.root}/dev/spark</spark.home>
-    <!-- profile controlled parameters, we are setting the defaults here so we can run "mvn package" with default profile values -->
-    <!-- hadoop2 -->
-    <hadoop.major-minor.version>2</hadoop.major-minor.version>
-    <hadoop.version>2.7.3</hadoop.version>
-    <scala.binary.version>2.12</scala.binary.version>
-    <scala.version>2.12.18</scala.version>
-    <java.version>1.8</java.version>
-    <py4j.version>0.10.9</py4j.version>
-    <json4s.version>3.5.3</json4s.version>
+    <!-- Profile-controlled parameters: defaults target Spark 4 + Scala 2.13 so
+         `mvn package` works without extra flags. Use -Pspark3 -Pscala-2.12 for
+         Spark 3 builds. -->
+    <hadoop.major-minor.version>3</hadoop.major-minor.version>
+    <hadoop.version>3.4.1</hadoop.version>
+    <scala.binary.version>2.13</scala.binary.version>
+    <!-- Match the Scala patch Spark 4.1.2 was built against. Spark's
+         Catalyst calls `MurmurHash3.caseClassHash$default$2()` which was
+         added in 2.13.17; older 2.13.x runs fail with NoSuchMethodError. -->
+    <scala.version>2.13.17</scala.version>
+    <java.version>17</java.version>
+    <py4j.version>0.10.9.9</py4j.version>
+    <json4s.version>4.0.7</json4s.version>
     <spark.bin.name>spark-${spark.version}-bin-hadoop${hadoop.major-minor.version}</spark.bin.name>
     <spark.bin.download.url>
       https://archive.apache.org/dist/spark/spark-${spark.version}/${spark.bin.name}.tgz
@@ -1071,7 +1076,11 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>3.5.0</version>
+          <!-- 3.6.2 bundles an ASM version that understands Java 22 bytecode
+               (major-version 66). Jackson 2.18.2 ships JDK 22 multi-release
+               classes under META-INF/versions/22, which 3.5.0's older ASM
+               refused to shade with `Unsupported class file major version`. -->
+          <version>3.6.2</version>
         </plugin>
 
         <plugin>
@@ -1425,6 +1434,7 @@
       </properties>
     </profile>
     <profile>
+      <!-- Use with `-Pspark3` for Spark 3 builds. -->
       <id>scala-2.12</id>
       <properties>
         <scala.binary.version>2.12</scala.binary.version>
@@ -1442,12 +1452,12 @@
     </profile>
 
     <profile>
+      <!-- Use with `-Pscala-2.12` for Spark 3 builds. -->
       <id>spark3</id>
       <properties>
         <spark.version>3.5.6</spark.version>
         <hadoop.major-minor.version>3</hadoop.major-minor.version>
         <hadoop.version>3.3.4</hadoop.version>
-        <java.version>1.8</java.version>
         <py4j.version>0.10.9.7</py4j.version>
         <json4s.version>3.7.0-M11</json4s.version>
         <netty.version>4.1.96.Final</netty.version>

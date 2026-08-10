@@ -28,11 +28,14 @@ jobs:
     container: ghcr.io/${{ github.repository_owner }}/livy-ci:latest
     strategy:
       matrix:
-        maven_profile:
-        - "-Pscala-2.12 -Pspark3"
-        jdk_path:
-        - "/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java"
-        - "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
+        include:
+          - maven_profile: "-Pscala-2.12 -Pspark3"
+            jdk_path: "/usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java"
+          - maven_profile: "-Pscala-2.12 -Pspark3"
+            jdk_path: "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
+          # spark4 is the default build; JDK 17+ required.
+          - maven_profile: ""
+            jdk_path: "/usr/lib/jvm/java-17-openjdk-amd64/bin/java"
     steps:
     -
       name: Checkout

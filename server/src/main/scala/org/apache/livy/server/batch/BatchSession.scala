@@ -90,6 +90,11 @@ object BatchSession extends Logging {
 
       builder.redirectOutput(Redirect.PIPE)
       builder.redirectErrorStream(true)
+      // Under unit-test runs we ask spark-submit to be verbose so the tests
+      // can grep the resolved arguments (queue name, master, class, ...) out
+      // of the child's log -- production sessions leave the default off so
+      // the extra output does not pollute the user-facing session log.
+      if (LivyConf.TEST_MODE) builder.verbose(true)
 
       val file = resolveURIs(Seq(request.file), livyConf)(0)
       val sparkSubmit = builder.start(Some(file), request.args)

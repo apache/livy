@@ -121,7 +121,7 @@ cd ..
 ARCHIVE_NAME_PREFIX="apache-livy-$LIVY_VERSION"
 SRC_ARCHIVE="$ARCHIVE_NAME_PREFIX-src.zip"
 BIN_ARCHIVE="${ARCHIVE_NAME_PREFIX}-bin.zip"
-SCALA_2_12_PROFILES="-Pscala-2.12"
+SCALA_2_12_PROFILES="-Pspark3 -Pscala-2.12"
 SCALA_2_11_PROFILES="-Pscala-2.11"
 
 if [[ "$1" == "package" ]]; then

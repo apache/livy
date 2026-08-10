@@ -44,7 +44,7 @@ object ScalaClientTestUtils extends AnyFunSuite with LivyBaseUnitTestSuite {
     for (a <- 1 to count) {
       buffer += r.nextInt()
     }
-    context.sc.parallelize(buffer, partitions).count()
+    context.sc.parallelize(buffer.toSeq, partitions).count()
   }
 
   def assertAwait(lock: CountDownLatch): Unit = {

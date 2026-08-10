@@ -30,27 +30,46 @@ import org.apache.livy.rsc.RSCConf
 import org.apache.livy.sessions._
 import org.apache.livy.test.framework.{BaseIntegrationTestSuite, LivyRestClient}
 
-class InteractiveIT extends BaseIntegrationTestSuite {
+class InteractiveIT extends BaseIntegrationTestSuite with ScalaVersionAware {
   test("basic interactive session") {
     withNewSession(Spark) { s =>
       s.run("val sparkVersion = sc.version").result().left.foreach(info(_))
       s.run("val scalaVersion = util.Properties.versionString").result().left.foreach(info(_))
-      s.run("1+1").verifyResult("res0: Int = 2\n")
+      // Scala 2.13's REPL prints a `val ` prefix before result names
+      // (`val res0: Int = 2`) whereas Scala 2.12 prints just `res0: Int = 2`.
+      // Accept both forms so the test passes on either the default Scala 2.13
+      // build or -Pscala-2.12.
+      s.run("1+1").verifyResult(s"${optionalValPrefixRegex}res0: Int = 2\n")
 
       // Ignore the following line if running on a external cluster due to config differences
       // with the mini cluster
-      s.run("""sc.getConf.get("spark.executor.instances")""").verifyResult("res1: String = 1\n")
+      s.run("""sc.getConf.get("spark.executor.instances")""")
+        .verifyResult(s"${optionalValPrefixRegex}res1: String = 1\n")
 
+      // Spark 4 relocated SQLContext into the `org.apache.spark.sql.classic`
+      // package; Spark 3 keeps it directly under `org.apache.spark.sql`. Match
+      // either shape (`SQLContext` or `classic.SQLContext`) and tolerate the
+      // Scala 2.13 REPL's `val ` prefix as elsewhere in this test.
       s.run("val sql = spark.sqlContext").verifyResult(
-        ".*" + Pattern.quote(
-        "sql: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext") + ".*")
-      s.run("abcde").verifyError(evalue = ".*?:[0-9]+: error: not found: value abcde.*")
+        ".*sql: org\\.apache\\.spark\\.sql\\.(?:classic\\.)?SQLContext = " +
+        "org\\.apache\\.spark\\.sql\\.(?:classic\\.)?SQLContext.*")
+      // Scala 2.12's REPL prefixes compile errors with a "<source>:<line>:"
+      // location marker (e.g. "<console>:12: error: not found: value abcde"),
+      // while Scala 2.13 drops the marker and just emits "error: not found:
+      // value abcde". Accept both.
+      s.run("abcde").verifyError(evalue = ".*(?:.*?:[0-9]+: )?error: not found: value abcde.*")
       s.run("throw new IllegalStateException()")
         .verifyError(evalue = ".*java\\.lang\\.IllegalStateException.*")
 
-      // Verify query submission
+      // Verify query submission. Spark 4's Scala 2.13 REPL surfaces the runtime
+      // class name (`org.apache.spark.sql.classic.DataFrame`) rather than the
+      // compile-time alias (`org.apache.spark.sql.DataFrame`) that Spark 3
+      // prints, and prefixes the identifier with `val ` like elsewhere in this
+      // test. Accept both shapes.
       s.run(s"""val df = spark.createDataFrame(Seq(("jerry", 20), ("michael", 21)))""")
-        .verifyResult(".*" + Pattern.quote("df: org.apache.spark.sql.DataFrame") + ".*")
+        .verifyResult(
+          s".*${optionalValPrefixRegex}df: " +
+            "org\\.apache\\.spark\\.sql\\.(?:classic\\.)?DataFrame.*")
       s.run("df.createOrReplaceTempView(\"people\")").result()
       s.run("SELECT * FROM people", Some(SQL)).verifyResult(".*\"jerry\",20.*\"michael\",21.*")
 
@@ -167,9 +186,15 @@ class InteractiveIT extends BaseIntegrationTestSuite {
       s.run("import org.codehaus.plexus.util._").verifyResult("import org.codehaus.plexus.util._\n")
 
       // Check does SparkContext see classes defined by Scala interpreter.
-      s.run("case class Item(i: Int)").verifyResult("defined class Item\n")
+      // Scala 2.12's REPL reports `defined class Item`; Scala 2.13 emits the
+      // shorter `class Item`. Accept both.
+      s.run("case class Item(i: Int)").verifyResult(s"${optionalDefinedPrefixRegex}class Item\n")
+      // Scala 2.13's REPL prefixes with `val ` (e.g. `val rdd: ...`); 2.12
+      // omits it. Spark 4 (Scala 2.13) also prints a deprecation warning
+      // before the value binding because `parallelize` is now deprecated on
+      // SparkContext -- accept an optional warning header.
       s.run("val rdd = sc.parallelize(Array.fill(10){new Item(scala.util.Random.nextInt(1000))})")
-        .verifyResult("rdd.*")
+        .verifyResult(s"(?s)${optionalWarningPrefixRegex}${optionalValPrefixRegex}rdd.*")
       s.run("rdd.count()").verifyResult(".*= 10\n")
     }
   }
@@ -188,15 +213,17 @@ class InteractiveIT extends BaseIntegrationTestSuite {
   test("recover interactive session") {
     withNewSession(Spark) { s =>
       val stmt1 = s.run("1")
-      stmt1.verifyResult("res0: Int = 1\n")
+      // Scala 2.13's REPL renders value results as `val res0: Int = 1`
+      // whereas Scala 2.12 prints `res0: Int = 1`; accept both.
+      stmt1.verifyResult(s"${optionalValPrefixRegex}res0: Int = 1\n")
 
       restartLivy()
 
       // Verify session still exists.
       s.verifySessionIdle()
-      s.run("2").verifyResult("res1: Int = 2\n")
+      s.run("2").verifyResult(s"${optionalValPrefixRegex}res1: Int = 2\n")
       // Verify statement result is preserved.
-      stmt1.verifyResult("res0: Int = 1\n")
+      stmt1.verifyResult(s"${optionalValPrefixRegex}res0: Int = 1\n")
 
       s.stop()
 
