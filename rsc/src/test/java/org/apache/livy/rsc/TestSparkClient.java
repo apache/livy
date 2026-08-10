@@ -46,6 +46,7 @@ import org.apache.livy.JobHandle;
 import org.apache.livy.LivyClient;
 import org.apache.livy.LivyClientBuilder;
 import org.apache.livy.client.common.Serializer;
+import org.apache.livy.client.common.TestUtils;
 import org.apache.livy.rsc.rpc.RpcException;
 import org.apache.livy.test.jobs.*;
 import static org.apache.livy.rsc.RSCConf.Entry.*;
@@ -80,6 +81,7 @@ public class TestSparkClient {
     conf.put("spark.repl.enableHiveContext", hiveSupport);
     conf.put("spark.sql.catalogImplementation", hiveSupport ? "hive" : "in-memory");
     conf.put(RETAINED_SHARE_VARIABLES.key(), "2");
+    conf.put(RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST);
     return conf;
   }
 

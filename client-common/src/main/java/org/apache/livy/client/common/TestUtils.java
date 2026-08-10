@@ -33,6 +33,14 @@ import org.apache.livy.annotations.Private;
 public class TestUtils {
 
   /**
+   * Loopback address for test services. Pinned to 127.0.0.1 so tests do not resolve macOS
+   * canonical hostnames that are unreachable from peer processes on the same host (see
+   * LIVY-1065). Reused for Livy server host, Thrift bind host, RSC RPC server address, and
+   * Spark driver / executor / YARN AM local IPs in the test layer.
+   */
+  public static final String TEST_BIND_HOST = "127.0.0.1";
+
+  /**
    * Returns JVM arguments that enable jacoco on a process to be run. The returned arguments
    * create a new, unique output file in the same directory referenced by the "jacoco.args"
    * system property.
