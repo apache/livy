@@ -76,27 +76,45 @@ object SparkKubernetesApp extends Logging {
     }
   }
 
+  /**
+   * Reload the OAuth token into the existing client configuration in place. Reuses the
+   * KubernetesClient created at startup; does not create a new one.
+   */
+  private[utils] def refreshServiceAccountToken(
+      client: KubernetesClient,
+      autoConfigure: String => Config = Config.autoConfigure(_)): Unit = {
+    val config = client.getConfiguration
+    val contextName = Option(config.getCurrentContext).map(_.getName).getOrElse("")
+    val newestConfig = autoConfigure(contextName)
+    config.setOauthToken(newestConfig.getOauthToken)
+  }
+
   val RefreshServiceAccountTokenThread = new Thread() {
+    private val tokenRefreshIntervalMs = 300000L
+
     override def run(): Unit = {
-      while (true) {
-        var currentContext = new Context()
-        var currentContextName = new String
-        val config = kubernetesClient.getConfiguration
-        if (config.getCurrentContext != null) {
-          currentContext = config.getCurrentContext.getContext
-          currentContextName = config.getCurrentContext.getName
+      while (!Thread.currentThread().isInterrupted) {
+        try {
+          refreshServiceAccountToken(kubernetesClient)
+          info("Refreshed Kubernetes service account token.")
+        } catch {
+          case e: InterruptedException =>
+            Thread.currentThread().interrupt()
+            warn("RefreshServiceAccountTokenThread was interrupted, exiting.", e)
+            return
+          case NonFatal(e) =>
+            warn("Failed to refresh Kubernetes service account token, will retry.", e)
         }
 
-        var newAccessToken = new String
-        val newestConfig = Config.autoConfigure(currentContextName)
-        newAccessToken = newestConfig.getOauthToken
-        info("Refreshed Kubernetes service account token.")
-
-        config.setOauthToken(newAccessToken)
-        kubernetesClient = new DefaultKubernetesClient(config)
-
-        // Token will expire 1 hour default, community recommend to update every 5 minutes
-        Thread.sleep(300000)
+        // Sleep runs after both success and failure to avoid a hot retry loop.
+        try {
+          Thread.sleep(tokenRefreshIntervalMs)
+        } catch {
+          case e: InterruptedException =>
+            Thread.currentThread().interrupt()
+            warn("RefreshServiceAccountTokenThread was interrupted, exiting.", e)
+            return
+        }
       }
     }
   }

@@ -20,7 +20,7 @@ import java.util.Objects._
 
 import io.fabric8.kubernetes.api.model._
 import io.fabric8.kubernetes.api.model.networking.v1.{Ingress, IngressRule, IngressSpec}
-import io.fabric8.kubernetes.client.KubernetesClient
+import io.fabric8.kubernetes.client.{ConfigBuilder, DefaultKubernetesClient, KubernetesClient}
 import org.mockito.Mockito.when
 import org.scalatest.{BeforeAndAfterAll, FunSpec}
 import org.scalatestplus.mockito.MockitoSugar._
@@ -45,6 +45,33 @@ class SparkKubernetesAppSpec extends FunSpec with LivyBaseUnitTestSuite with Bef
   override def afterAll(): Unit = {
     super.afterAll()
     assert(SparkKubernetesApp.getAppSize === 0)
+  }
+
+  describe("refreshServiceAccountToken") {
+    it("should reload the OAuth token into the existing config using the current context") {
+      val clientConfig = new ConfigBuilder().withOauthToken("old-token").build()
+      val namedContext = new NamedContext()
+      namedContext.setName("prod-context")
+      clientConfig.setCurrentContext(namedContext)
+
+      // DefaultKubernetesClient is used only so getConfiguration returns a concrete Config
+      // (the interface's generic return type makes the Mockito stub ambiguous).
+      val client = mock[DefaultKubernetesClient]
+      when(client.getConfiguration).thenReturn(clientConfig)
+
+      var capturedContextName: String = null
+      SparkKubernetesApp.refreshServiceAccountToken(
+        client,
+        contextName => {
+          capturedContextName = contextName
+          new ConfigBuilder().withOauthToken("new-token").build()
+        }
+      )
+
+      assert(capturedContextName === "prod-context")
+      // Same config object is mutated in place; no new KubernetesClient is created.
+      assert(clientConfig.getOauthToken === "new-token")
+    }
   }
 
   describe("KubernetesAppReport") {
