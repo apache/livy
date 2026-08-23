@@ -51,10 +51,10 @@ jobs:
       # Must match the pyenv-installed version in dev/docker/livy-dev-base/Dockerfile.
       # Per each Spark release's python/setup.py: Spark 4.1 supports 3.10..3.14
       # (python_requires=">=3.10"), Spark 3.5 supports 3.8..3.11
-      # (python_requires=">=3.8"). The intersection is 3.10 and 3.11; 3.11.11
-      # is picked as the shared version.
+      # (python_requires=">=3.8"). The intersection is 3.10 and 3.11;
+      # 3.11 is picked as the shared version.
       name: Set Python 3 as default
-      run: pyenv global 3.11.11 && echo "PYSPARK_PYTHON=$(which python3)" >> "$GITHUB_ENV"
+      run: pyenv global 3.11 && echo "PYSPARK_PYTHON=$(which python3)" >> "$GITHUB_ENV"
     -
       name: Set JDK version
       run: update-alternatives --set java ${{ matrix.jdk_path }}

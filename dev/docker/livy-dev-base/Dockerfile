@@ -70,17 +70,17 @@ RUN git clone https://github.com/pyenv/pyenv.git $HOME/pyenv
 ENV PYENV_ROOT=$HOME/pyenv
 ENV PATH="$HOME/pyenv/shims:$HOME/pyenv/bin:$HOME/bin:$PATH"
 
-# Python 3.11.11 is chosen because it is in the officially supported range of
+# Python 3.11 is chosen because it is in the officially supported range of
 # BOTH matrix profiles, per each Spark release's python/setup.py:
 #   * -Pspark4 (Spark 4.1.2): python_requires=">=3.10", classifiers list
 #     3.10 / 3.11 / 3.12 / 3.13 / 3.14.
 #   * -Pspark3 (Spark 3.5.6): python_requires=">=3.8", classifiers list
 #     3.8 / 3.9 / 3.10 / 3.11.
-# The intersection is 3.10 and 3.11; we pick the higher one (3.11.11) so the
+# The intersection is 3.10 and 3.11; we pick the higher one (3.11) so the
 # same image serves both profiles. When bumping this, keep
 # .github/workflows/integration-tests.yaml's `pyenv global` in sync.
-RUN pyenv install -v 3.11.11 && \
-  pyenv global 3.11.11 && \
+RUN pyenv install -v 3.11 && \
+  pyenv global 3.11 && \
   pyenv rehash
 
 # Install build dependencies for python3
