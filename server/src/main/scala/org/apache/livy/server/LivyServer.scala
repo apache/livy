@@ -252,6 +252,8 @@ class LivyServer extends Logging {
             }
 
             context.mountMetricsAdminServlet("/metrics")
+            LivySessionMetrics.register(
+              metricRegistry, interactiveSessionManager, batchSessionManager)
 
             mount(context, livyVersionServlet, "/version/*")
           } catch {
