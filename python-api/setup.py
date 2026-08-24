@@ -42,10 +42,9 @@ setup(
     # development". Modern pip (>= 24) rejects `1.0.0-SNAPSHOT` outright with
     # `Invalid version: '1.0.0-SNAPSHOT'` when parsing this package.
     version="1.0.0.dev0",
-    packages=["livy", "livy-tests"],
+    packages=["livy"],
     package_dir={
         "": "src/main/python",
-        "livy-tests": "src/test/python/livy-tests",
     },
     url='https://github.com/apache/livy',
     author_email='user@livy.apache.org',
@@ -55,9 +54,4 @@ setup(
     keywords='livy pyspark development',
     classifiers=CLASSIFIERS,
     install_requires=requirements,
-    extras_require={
-        ':python_version == "2.7"': ['futures']
-    },
-    setup_requires=['pytest-runner', 'flake8'],
-    tests_require=['pytest']
 )

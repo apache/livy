@@ -90,7 +90,6 @@ RUN python3 -m pip install -U pip && pip3 install \
         flake8 \
         flaky \
         pytest \
-        pytest-runner \
         requests-kerberos \
         requests \
         responses

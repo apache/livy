@@ -63,8 +63,8 @@
               <executable>python</executable>
               <skip>${skipTests}</skip>
               <arguments>
-                <argument>setup.py</argument>
-                <argument>test</argument>
+                <argument>-m</argument>
+                <argument>pytest</argument>
               </arguments>
               <environmentVariables>
                 <TMPDIR>${project.build.directory}/tmp</TMPDIR>
