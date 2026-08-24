@@ -593,6 +593,107 @@ Gets the log lines from this batch.
   </tr>
 </table>
 
+### GET /metrics/metrics
+
+Returns Codahale (Dropwizard) metrics for the Livy server, including session
+count gauges registered at startup. The metrics servlet is mounted at `/metrics`;
+the JSON payload is served at `/metrics/metrics`.
+
+Append `?pretty=true` for formatted output.
+
+#### Request Parameters
+
+<table class="table">
+  <tr><th>Name</th><th>Description</th><th>Type</th></tr>
+  <tr>
+    <td>pretty</td>
+    <td>When set to <code>true</code>, returns formatted JSON</td>
+    <td>boolean</td>
+  </tr>
+</table>
+
+#### Response Body
+
+JSON object containing Codahale metrics. Session gauges are exposed under the
+`gauges` key. Each gauge reports the current session count on this Livy server
+instance.
+
+<table class="table">
+  <tr><th>Gauge name</th><th>Description</th></tr>
+  <tr>
+    <td>livy.sessions.total</td>
+    <td>Total interactive and batch sessions</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.active.total</td>
+    <td>Sessions in active states (interactive: starting, idle, busy; batch: starting, running)</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.terminal.total</td>
+    <td>Sessions in terminal states</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.interactive.total</td>
+    <td>Total interactive sessions</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.interactive.idle</td>
+    <td>Interactive sessions in <code>idle</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.interactive.busy</td>
+    <td>Interactive sessions in <code>busy</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.interactive.starting</td>
+    <td>Interactive sessions in <code>starting</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.interactive.shutting_down</td>
+    <td>Interactive sessions in <code>shutting_down</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.interactive.dead</td>
+    <td>Interactive sessions in <code>dead</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.interactive.error</td>
+    <td>Interactive sessions in <code>error</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.interactive.killed</td>
+    <td>Interactive sessions in <code>killed</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.batch.total</td>
+    <td>Total batch sessions</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.batch.starting</td>
+    <td>Batch sessions in <code>starting</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.batch.running</td>
+    <td>Batch sessions in <code>running</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.batch.success</td>
+    <td>Batch sessions in <code>success</code> or <code>succeeded</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.batch.dead</td>
+    <td>Batch sessions in <code>dead</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.batch.error</td>
+    <td>Batch sessions in <code>error</code> state</td>
+  </tr>
+  <tr>
+    <td>livy.sessions.batch.killed</td>
+    <td>Batch sessions in <code>killed</code> state</td>
+  </tr>
+</table>
+
 ## REST Objects
 
 ### Session
