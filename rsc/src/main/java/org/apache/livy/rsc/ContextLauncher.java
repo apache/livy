@@ -250,6 +250,14 @@ class ContextLauncher {
     conf.set(key, confValue);
   }
 
+  static String resolveDriverAddress(RSCConf conf, BaseProtocol.RemoteDriverAddress msg,
+      InetSocketAddress remoteAddress) {
+    if (conf.getBoolean(DRIVER_ADDRESS_USE_HOSTNAME)) {
+      return msg.host;
+    }
+    return remoteAddress.getAddress().getHostAddress();
+  }
+
   /**
    * Write the configuration to a file readable only by the process's owner. Livy properties
    * are written with an added prefix so that they can be loaded using SparkConf on the driver
@@ -327,13 +335,8 @@ class ContextLauncher {
     //Note. Your compiler or IDE may identify this method as unused
     //tests fail without it
     public void handle(ChannelHandlerContext ctx, RemoteDriverAddress msg) {
-      String driverHost;
-      if (conf.getBoolean(DRIVER_ADDRESS_USE_HOSTNAME)) {
-        driverHost = msg.host;
-      } else {
-        InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
-        driverHost = insocket.getAddress().getHostAddress();
-      }
+      InetSocketAddress insocket = (InetSocketAddress) ctx.channel().remoteAddress();
+      String driverHost = resolveDriverAddress(conf, msg, insocket);
       ContextInfo info = new ContextInfo(driverHost, msg.port, clientId, secret);
       if (promise.trySuccess(info)) {
         timeout.cancel(true);
