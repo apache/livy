@@ -93,6 +93,11 @@
 # time of sessions on YARN can be reduced.
 # livy.rsc.jars =
 
+# If true, the RSC driver's address is resolved from the hostname reported by the driver
+# instead of the socket's IP. Useful for Kubernetes + service-mesh (Istio) deployments where
+# pod IPs are not stable/routable but hostnames are.
+# livy.rsc.driver.address.use-hostname = false
+
 # Comma-separated list of Livy REPL jars. By default Livy will upload jars from its installation
 # directory every time a session is started. By caching these files in HDFS, for example, startup
 # time of sessions on YARN can be reduced. Please list all the repl dependencies including
