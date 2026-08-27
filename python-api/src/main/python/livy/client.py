@@ -379,7 +379,7 @@ class HttpClient:
         path = os.path.join(config_dir, config_file)
         data = "[" + self._CONFIG_SECTION + "]\n" + \
             open(path, encoding='utf-8').read()
-        self._config.readfp(StringIO(data))
+        self._config.read_file(StringIO(data))
 
     def _create_new_session(self, session_conf_dict):
         data = {'kind': 'pyspark', 'conf': session_conf_dict}

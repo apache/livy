@@ -133,7 +133,7 @@ class JobHandle(Future):
                 self._invoke_callbacks()
             else:
                 raise RuntimeError('Future in unexpected state::', self._state)
-            self._job_handle_condition.notifyAll()
+            self._job_handle_condition.notify_all()
 
     def cancel(self):
         """
