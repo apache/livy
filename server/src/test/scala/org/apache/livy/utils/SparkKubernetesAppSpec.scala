@@ -149,6 +149,32 @@ class SparkKubernetesAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite with 
         .getExecutorsLogUrls.isEmpty)
     }
 
+    it("should return diagnostics without executor entries when executors is empty") {
+      // When livy.server.kubernetes.executor-tracking.enabled=false, the
+      // executor LIST in getApplicationReport is skipped and executors is
+      // passed in as Seq.empty. Diagnostics must still render the driver
+      // section without error.
+      val driverStatus = when(mock[PodStatus].getPhase).thenReturn("Running")
+        .getMock[PodStatus]
+      val driverMeta = when(mock[ObjectMeta].getName).thenReturn("driver-pod")
+        .getMock[ObjectMeta]
+      when(driverMeta.getNamespace).thenReturn("ns")
+      when(driverMeta.getLabels).thenReturn(Map.empty[String, String].asJava)
+      val driverSpec = when(mock[PodSpec].getNodeName).thenReturn("node-1")
+        .getMock[PodSpec]
+      when(driverSpec.getContainers).thenReturn(java.util.Collections.emptyList[Container])
+      when(driverStatus.getConditions).thenReturn(java.util.Collections.emptyList[PodCondition])
+      val driver = when(mock[Pod].getStatus).thenReturn(driverStatus).getMock[Pod]
+      when(driver.getMetadata).thenReturn(driverMeta)
+      when(driver.getSpec).thenReturn(driverSpec)
+
+      val diagnostics = KubernetesAppReport(
+        Some(driver), Seq.empty, IndexedSeq.empty, None, new LivyConf(false)
+      ).getApplicationDiagnostics
+      assert(diagnostics.exists(_.contains("driver-pod")))
+      assert(!diagnostics.exists(_.contains("executor")))
+    }
+
     it("should return driver ingress url") {
 
       def livyConf(protocol: Option[String]): LivyConf = {
@@ -235,6 +261,13 @@ class SparkKubernetesAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite with 
       intercept[IllegalArgumentException] {
         KubernetesClientFactory.createKubernetesClient(conf)
       }
+    }
+
+    it("should enable executor tracking by default") {
+      // Preserve existing behavior: operators must opt in to skipping the
+      // executor LIST. This guards against an accidental default flip that
+      // would silently drop executor entries from session diagnostics.
+      assert(new LivyConf(false).getBoolean(LivyConf.KUBERNETES_EXECUTOR_TRACKING_ENABLED))
     }
   }
 

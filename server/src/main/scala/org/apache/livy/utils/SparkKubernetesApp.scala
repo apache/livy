@@ -178,6 +178,11 @@ object SparkKubernetesApp extends Logging {
       livyConf.getTimeAsMs(LivyConf.KUBERNETES_APP_LEAKAGE_CHECK_INTERVAL)
     sessionLeakageCheckTimeout = livyConf.getTimeAsMs(LivyConf.KUBERNETES_APP_LEAKAGE_CHECK_TIMEOUT)
 
+    if (!livyConf.getBoolean(LivyConf.KUBERNETES_EXECUTOR_TRACKING_ENABLED)) {
+      info("Kubernetes executor tracking is disabled. Per-executor log URLs and " +
+        "per-executor entries in session diagnostics will be omitted.")
+    }
+
     leakedAppsGCThread.setDaemon(true)
     leakedAppsGCThread.setName("LeakedAppsGCThread")
     leakedAppsGCThread.start()
@@ -721,12 +726,27 @@ private[utils] object KubernetesExtensions {
       cacheLogSize: Int,
       appTagLabel: String = SPARK_APP_TAG_LABEL
     ): KubernetesAppReport = {
-      val pods = client.pods.inNamespace(app.getApplicationNamespace)
-        .withLabels(Map(appTagLabel -> app.getApplicationTag).asJava)
-        .list.getItems.asScala.toSeq
-      val driver = pods.find(_.getMetadata.getLabels.get(SPARK_ROLE_LABEL) == SPARK_ROLE_DRIVER)
-      val executors =
-        pods.filter(_.getMetadata.getLabels.get(SPARK_ROLE_LABEL) == SPARK_ROLE_EXECUTOR)
+      // Narrow the LIST to the driver pod; application state does not depend on executors.
+      val driver = client.pods.inNamespace(app.getApplicationNamespace)
+        .withLabels(Map(
+          appTagLabel -> app.getApplicationTag,
+          SPARK_ROLE_LABEL -> SPARK_ROLE_DRIVER
+        ).asJava)
+        .list.getItems.asScala.headOption
+
+      // Executors are used only for log URLs and per-executor diagnostics; skip when disabled.
+      val executors: Seq[Pod] =
+        if (livyConf.getBoolean(LivyConf.KUBERNETES_EXECUTOR_TRACKING_ENABLED)) {
+          client.pods.inNamespace(app.getApplicationNamespace)
+            .withLabels(Map(
+              appTagLabel -> app.getApplicationTag,
+              SPARK_ROLE_LABEL -> SPARK_ROLE_EXECUTOR
+            ).asJava)
+            .list.getItems.asScala
+        } else {
+          Seq.empty
+        }
+
       val appLog = Try(
         client.pods.inNamespace(app.getApplicationNamespace)
           .withName(app.getApplicationPod.getMetadata.getName)
