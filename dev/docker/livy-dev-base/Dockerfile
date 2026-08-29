@@ -72,7 +72,7 @@ ENV PATH="$HOME/pyenv/shims:$HOME/pyenv/bin:$HOME/bin:$PATH"
 
 # Python 3.11 is chosen because it is in the officially supported range of
 # BOTH matrix profiles, per each Spark release's python/setup.py:
-#   * -Pspark4 (Spark 4.1.2): python_requires=">=3.10", classifiers list
+#   * default / Spark 4.1.2: python_requires=">=3.10", classifiers list
 #     3.10 / 3.11 / 3.12 / 3.13 / 3.14.
 #   * -Pspark3 (Spark 3.5.6): python_requires=">=3.8", classifiers list
 #     3.8 / 3.9 / 3.10 / 3.11.

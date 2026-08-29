@@ -38,6 +38,7 @@ class SparkProcessBuilder(livyConf: LivyConf) extends Logging {
   private[this] var _redirectOutput: Option[ProcessBuilder.Redirect] = None
   private[this] var _redirectError: Option[ProcessBuilder.Redirect] = None
   private[this] var _redirectErrorStream: Option[Boolean] = None
+  private[this] var _verbose: Boolean = false
 
   def executable(executable: String): SparkProcessBuilder = {
     _executable = executable
@@ -154,6 +155,16 @@ class SparkProcessBuilder(livyConf: LivyConf) extends Logging {
     this
   }
 
+  /**
+   * Enable `spark-submit --verbose`. When set, spark-submit prints its
+   * parsed argument list (queue, master, class, etc.) to stderr; this is
+   * primarily useful for tests that need to assert on the resolved arguments.
+   */
+  def verbose(v: Boolean): SparkProcessBuilder = {
+    _verbose = v
+    this
+  }
+
   def start(file: Option[String], args: Traversable[String]): LineBufferedProcess = {
     var arguments = ArrayBuffer(_executable)
 
@@ -191,6 +202,8 @@ class SparkProcessBuilder(livyConf: LivyConf) extends Logging {
     }
 
     addOpt("--queue", _queue)
+
+    if (_verbose) arguments += "--verbose"
 
     arguments += file.getOrElse("spark-internal")
     arguments ++= args

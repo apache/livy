@@ -35,9 +35,10 @@ import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.RSCConf
 import org.apache.livy.rsc.driver.{Statement, StatementState}
 import org.apache.livy.sessions._
+import org.apache.livy.test.ScalaVersionAware
 
 abstract class BaseSessionSpec(kind: Kind)
-    extends AnyFlatSpec with Matchers with LivyBaseUnitTestSuite {
+    extends AnyFlatSpec with Matchers with LivyBaseUnitTestSuite with ScalaVersionAware {
 
   implicit val formats = DefaultFormats
 
