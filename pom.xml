@@ -92,8 +92,8 @@
     <jackson.version>2.12.7</jackson.version>
     <jackson-databind.version>2.12.7.1</jackson-databind.version>
     <jacoco.version>0.8.13</jacoco.version>
-    <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
-    <jetty.version>9.4.56.v20240826</jetty.version>
+    <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
+    <jetty.version>10.0.1</jetty.version>
     <junit.version>4.13.1</junit.version>
     <libthrift.version>0.9.3</libthrift.version>
     <log4j.version>2.26.0</log4j.version>
