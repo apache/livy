@@ -36,6 +36,9 @@ import org.apache.livy.sessions.Session.RecoveryMetadata
 object SessionManager {
   val SESSION_RECOVERY_MODE_OFF = "off"
   val SESSION_RECOVERY_MODE_RECOVERY = "recovery"
+
+  /** Outcome of a [[SessionManager.refresh]] call. */
+  case class RefreshResult(added: Int, total: Int, failed: Int)
 }
 
 class BatchSessionManager(
@@ -100,8 +103,14 @@ class SessionManager[S <: Session, R <: RecoveryMetadata : ClassTag](
   }
 
   def register(session: S): S = {
-    info(s"Registering new session ${session.id}")
     synchronized {
+      sessions.get(session.id) match {
+        case Some(existing) =>
+          debug(s"Session ${session.id} already registered; skipping duplicate registration.")
+          return existing
+        case None =>
+      }
+      info(s"Registering new session ${session.id}")
       session.name.foreach { sessionName =>
         if (sessionsByName.contains(sessionName)) {
           val errMsg = s"Duplicate session name: ${session.name} for session ${session.id}"
@@ -227,6 +236,38 @@ class SessionManager[S <: Session, R <: RecoveryMetadata : ClassTag](
     recoveryFailure.foreach(ex => error(ex.getMessage, ex.getCause))
 
     recoveredSessions
+  }
+
+  /**
+   * Re-scan the state store and import sessions written by another Livy server.
+   * Add-only: in-memory sessions are not removed even if their state-store entry is
+   * gone. The id counter is advanced forward only.
+   */
+  def refresh(): RefreshResult = {
+    // Read the state store outside the SessionManager monitor so we don't block the
+    // garbage collector and heartbeat watchdog while doing N small EFS / ZK reads.
+    val storeNextId = sessionStore.getNextSessionId(sessionType)
+    val sessionMetadata = sessionStore.getAllSessions[R](sessionType)
+
+    val recoveryFailure = sessionMetadata.filter(_.isFailure).map(_.failed.get)
+    recoveryFailure.foreach(ex => warn(s"Refresh failure for $sessionType: ${ex.getMessage}", ex))
+
+    synchronized {
+      if (storeNextId > idCounter.get) {
+        idCounter.set(storeNextId)
+      }
+
+      val before = sessions.size
+      sessionMetadata.flatMap(_.toOption)
+        .filterNot(m => sessions.contains(m.id))
+        .map(sessionRecovery)
+        .foreach(register)
+
+      val added = sessions.size - before
+      info(s"Refreshed $sessionType sessions: added=$added, total=${sessions.size}," +
+        s" failed=${recoveryFailure.size}, next session id=$idCounter")
+      RefreshResult(added, sessions.size, recoveryFailure.size)
+    }
   }
 
   private class GarbageCollector extends Thread("session gc thread") {

@@ -39,7 +39,7 @@ import org.apache.livy._
 import org.apache.livy.server.auth.LdapAuthenticationHandlerImpl
 import org.apache.livy.server.batch.BatchSessionServlet
 import org.apache.livy.server.interactive.InteractiveSessionServlet
-import org.apache.livy.server.recovery.{SessionStore, StateStore, ZooKeeperManager}
+import org.apache.livy.server.recovery.{RecoveryServlet, SessionStore, StateStore, ZooKeeperManager}
 import org.apache.livy.server.ui.UIServlet
 import org.apache.livy.sessions.{BatchSessionManager, InteractiveSessionManager}
 import org.apache.livy.sessions.SessionManager.SESSION_RECOVERY_MODE_OFF
@@ -176,6 +176,11 @@ class LivyServer extends Logging {
       }
     }
 
+    // Operator endpoint: re-scan the recovery state store and import any sessions
+    // written by another Livy server. Guarded by livy.superusers.
+    val recoveryServlet = new RecoveryServlet(
+      livyConf, accessManager, interactiveSessionManager, batchSessionManager)
+
     // Servlet for hosting static files such as html, css, and js
     // Necessary since Jetty cannot set it's resource base inside a jar
     // Returns 404 if the file does not exist
@@ -256,6 +261,8 @@ class LivyServer extends Logging {
               metricRegistry, interactiveSessionManager, batchSessionManager)
 
             mount(context, livyVersionServlet, "/version/*")
+
+            mount(context, recoveryServlet, "/recovery/*")
           } catch {
             case e: Throwable =>
               error("Exception thrown when initializing server", e)

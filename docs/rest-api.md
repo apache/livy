@@ -694,6 +694,49 @@ instance.
   </tr>
 </table>
 
+### POST /recovery/sessions/refresh
+
+Operator endpoint. Re-scans the recovery state store and imports any interactive
+sessions written by another Livy server that this server doesn't yet have in memory.
+Add-only: existing in-memory sessions are never removed by this call.
+
+**Authorization:** restricted to users listed in `livy.superusers`; all other callers
+get a `403`. Also requires `livy.server.recovery.mode` to be set to something other
+than `off` (i.e. a real state store must be configured); otherwise this returns `409`,
+since there would be nothing to refresh from.
+
+#### Response Body
+
+<table class="table">
+  <tr><th>Name</th><th>Description</th><th>Type</th></tr>
+  <tr>
+    <td>added</td>
+    <td>Number of sessions imported from the state store that weren't already in memory</td>
+    <td>int</td>
+  </tr>
+  <tr>
+    <td>total</td>
+    <td>Total number of interactive sessions in memory after the refresh</td>
+    <td>int</td>
+  </tr>
+  <tr>
+    <td>failed</td>
+    <td>Number of state store entries that failed to deserialize</td>
+    <td>int</td>
+  </tr>
+</table>
+
+### POST /recovery/batches/refresh
+
+Same as `POST /recovery/sessions/refresh`, but for batch sessions. Same authorization
+and recovery-mode requirements, and the same response body shape.
+
+### POST /recovery/refresh
+
+Runs both of the above in a single call. Returns a JSON object with `sessions` and
+`batches` keys, each holding a response body of the same shape as the individual
+endpoints above.
+
 ## REST Objects
 
 ### Session
