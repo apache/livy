@@ -113,6 +113,31 @@ class FileSystemStateStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
       verify(fileContext).delete(pathEq("/.key.tmp.crc"), equal(false))
     }
 
+    it("tryExclusiveCreate should write file and return true if key doesn't exist") {
+      val fileContext = mockFileContext("700")
+      val outputStream = mock[FSDataOutputStream]
+      when(fileContext.create(pathEq("/key"), any[util.EnumSet[CreateFlag]], any[CreateOpts]))
+        .thenReturn(outputStream)
+
+      val stateStore = new FileSystemStateStore(makeConf(), Some(fileContext))
+
+      val created = stateStore.tryExclusiveCreate("key", "value")
+
+      created shouldBe true
+      verify(outputStream).write(""""value"""".getBytes)
+      verify(outputStream, atLeastOnce).close()
+    }
+
+    it("tryExclusiveCreate should return false if the key already exists") {
+      val fileContext = mockFileContext("700")
+      when(fileContext.create(pathEq("/key"), any[util.EnumSet[CreateFlag]], any[CreateOpts]))
+        .thenThrow(new FileAlreadyExistsException("Unit test"))
+
+      val stateStore = new FileSystemStateStore(makeConf(), Some(fileContext))
+
+      stateStore.tryExclusiveCreate("key", "value") shouldBe false
+    }
+
     it("get should read file") {
       val fileContext = mockFileContext("700")
       abstract class MockInputStream extends InputStream with Seekable with PositionedReadable {}

@@ -108,6 +108,22 @@ class FileSystemStateStore(
     }
   }
 
+  override def tryExclusiveCreate(key: String, value: Object): Boolean = {
+    // CREATE without OVERWRITE fails atomically with FileAlreadyExistsException if the
+    // destination already exists, so no separate exists-check (which would be racy) is needed.
+    val createFlag = util.EnumSet.of(CreateFlag.CREATE)
+    try {
+      usingResource(fileContext.create(absPath(key), createFlag, CreateOpts.createParent())) {
+        newFile =>
+          newFile.write(serializeToBytes(value))
+          newFile.close()
+      }
+      true
+    } catch {
+      case _: FileAlreadyExistsException => false
+    }
+  }
+
   override def get[T: ClassTag](key: String): Option[T] = {
     try {
       usingResource(fileContext.open(absPath(key))) { is =>

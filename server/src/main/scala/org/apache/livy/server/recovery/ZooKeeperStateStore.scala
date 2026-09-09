@@ -36,6 +36,10 @@ class ZooKeeperStateStore(
     zkManager.get(prefixKey(key))
   }
 
+  override def tryExclusiveCreate(key: String, value: Object): Boolean = {
+    zkManager.tryCreate(prefixKey(key), value)
+  }
+
   override def getChildren(key: String): Seq[String] = {
     zkManager.getChildren(prefixKey(key))
   }

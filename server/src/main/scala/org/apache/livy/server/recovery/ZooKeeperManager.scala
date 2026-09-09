@@ -25,7 +25,7 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.CuratorFrameworkFactory
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.retry.RetryNTimes
-import org.apache.zookeeper.KeeperException.NoNodeException
+import org.apache.zookeeper.KeeperException.{NodeExistsException, NoNodeException}
 import org.apache.zookeeper.client.ZKClientConfig
 
 import org.apache.livy.LivyConf
@@ -154,6 +154,19 @@ class ZooKeeperManager(
       curatorClient.create().creatingParentsIfNeeded().forPath(key, data)
     } else {
       curatorClient.setData().forPath(key, data)
+    }
+  }
+
+  // Atomically create the znode only if it doesn't already exist. Relies on ZooKeeper's
+  // create() failing with NodeExistsException rather than a separate exists-check, which
+  // would be racy against concurrent creators.
+  def tryCreate(key: String, value: Object): Boolean = {
+    val data = serializeToBytes(value)
+    try {
+      curatorClient.create().creatingParentsIfNeeded().forPath(key, data)
+      true
+    } catch {
+      case _: NodeExistsException => false
     }
   }
 

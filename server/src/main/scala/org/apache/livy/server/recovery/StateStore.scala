@@ -59,6 +59,15 @@ abstract class StateStore(livyConf: LivyConf) extends JsonMapper {
   def get[T: ClassTag](key: String): Option[T]
 
   /**
+   * Atomically create a key-value pair in this state store only if the key doesn't already
+   * exist. Unlike [[set]], this never overwrites an existing value.
+   * @return true if the key was created, false if the key already exists.
+   * @throws Exception Throw when persisting the state store fails for a reason other than
+   *                    the key already existing.
+   */
+  def tryExclusiveCreate(key: String, value: Object): Boolean
+
+  /**
    * Treat keys in this state store as a directory tree and
    * return names of the direct children of the key.
    * @return List of names of the direct children of the key.
