@@ -742,7 +742,7 @@ private[utils] object KubernetesExtensions {
               appTagLabel -> app.getApplicationTag,
               SPARK_ROLE_LABEL -> SPARK_ROLE_EXECUTOR
             ).asJava)
-            .list.getItems.asScala
+            .list.getItems.asScala.toSeq
         } else {
           Seq.empty
         }
