@@ -294,6 +294,10 @@
 # per-executor diagnostics). Disable on large clusters; driver pod is polled regardless.
 # livy.server.kubernetes.executor-tracking.enabled = true
 
+# Whether Livy fetches the driver pod's Kubernetes logs each poll cycle. Disable if driver
+# logs are collected externally and freshness in /sessions/:id/log, /batches/:id/log is not needed.
+# livy.server.kubernetes.driver-log-polling.enabled = true
+
 # Weather to create Kubernetes Nginx Ingress for Spark UI. If set to true, configure the desired
 # options below
 # livy.server.kubernetes.ingress.create = false

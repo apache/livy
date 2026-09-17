@@ -269,6 +269,37 @@ class SparkKubernetesAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite with 
       // would silently drop executor entries from session diagnostics.
       assert(new LivyConf(false).getBoolean(LivyConf.KUBERNETES_EXECUTOR_TRACKING_ENABLED))
     }
+
+    it("should enable driver log polling by default") {
+      // Preserve existing behavior unless operators explicitly disable driver log polling.
+      assert(new LivyConf(false).getBoolean(LivyConf.KUBERNETES_DRIVER_LOG_POLLING_ENABLED))
+    }
+  }
+
+  describe("resolveDriverAppLog") {
+    it("should skip fetching the log when driver log polling is disabled") {
+      var fetchCalled = false
+      val livyConf = new LivyConf(false)
+        .set(LivyConf.KUBERNETES_DRIVER_LOG_POLLING_ENABLED, false)
+
+      val result = KubernetesExtensions.resolveDriverAppLog(livyConf, () => {
+        fetchCalled = true
+        IndexedSeq("should-not-be-returned")
+      })
+
+      assert(!fetchCalled)
+      assert(result.isEmpty)
+    }
+
+    it("should fetch the log when driver log polling is enabled") {
+      val livyConf = new LivyConf(false)
+        .set(LivyConf.KUBERNETES_DRIVER_LOG_POLLING_ENABLED, true)
+
+      val result = KubernetesExtensions.resolveDriverAppLog(
+        livyConf, () => IndexedSeq("line-1", "line-2"))
+
+      assertResult(IndexedSeq("line-1", "line-2"))(result)
+    }
   }
 
   describe("KubernetesClientExtensions") {

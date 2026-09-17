@@ -182,6 +182,10 @@ object SparkKubernetesApp extends Logging {
       info("Kubernetes executor tracking is disabled. Per-executor log URLs and " +
         "per-executor entries in session diagnostics will be omitted.")
     }
+    if (!livyConf.getBoolean(LivyConf.KUBERNETES_DRIVER_LOG_POLLING_ENABLED)) {
+      info("Kubernetes driver log polling is disabled. Livy will keep polling pod state " +
+        "and diagnostics, but live driver log lines will be omitted from session/batch logs.")
+    }
 
     leakedAppsGCThread.setDaemon(true)
     leakedAppsGCThread.setName("LeakedAppsGCThread")
@@ -693,6 +697,18 @@ private[utils] case class KubernetesAppReport(driver: Option[Pod], executors: Se
 private[utils] object KubernetesExtensions {
   import KubernetesConstants._
 
+  // Skips the driver pod's Kubernetes log fetch when driver log polling is disabled,
+  // rather than paying for the pods/<driver>/log call just to discard the result.
+  private[utils] def resolveDriverAppLog(
+      livyConf: LivyConf,
+      fetchLog: () => IndexedSeq[String]): IndexedSeq[String] = {
+    if (livyConf.getBoolean(LivyConf.KUBERNETES_DRIVER_LOG_POLLING_ENABLED)) {
+      fetchLog()
+    } else {
+      IndexedSeq.empty
+    }
+  }
+
   implicit class KubernetesClientExtensions(client: KubernetesClient) {
     import scala.collection.JavaConverters._
 
@@ -747,11 +763,13 @@ private[utils] object KubernetesExtensions {
           Seq.empty
         }
 
-      val appLog = Try(
+      // The driver pod's Kubernetes logs are used only to populate live log lines in
+      // session/batch responses; skip the pods/<driver>/log call when disabled.
+      val appLog = resolveDriverAppLog(livyConf, () => Try(
         client.pods.inNamespace(app.getApplicationNamespace)
           .withName(app.getApplicationPod.getMetadata.getName)
           .tailingLines(cacheLogSize).getLog.split("\n").toIndexedSeq
-      ).getOrElse(IndexedSeq.empty)
+      ).getOrElse(IndexedSeq.empty))
       val ingress = client.network.v1.ingresses.inNamespace(app.getApplicationNamespace)
         .withLabel(SPARK_APP_TAG_LABEL, app.getApplicationTag)
         .list.getItems.asScala.headOption
