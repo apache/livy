@@ -12,8 +12,8 @@ logs/*
 **/target/**
 **/bootstrap.min.css
 **/bootstrap.bundle.min.js
-**/dataTables.bootstrap.min.css
-**/dataTables.bootstrap.min.js
+**/dataTables.bootstrap4.min.css
+**/dataTables.bootstrap4.min.js
 **/jquery.dataTables.min.js
 **/jquery-3.7.1.min.js
 **/fonts/**
