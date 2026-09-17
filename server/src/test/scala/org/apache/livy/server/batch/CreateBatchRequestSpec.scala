@@ -50,6 +50,59 @@ class CreateBatchRequestSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
       assert(req.conf === Map())
     }
 
+    it("should deserialize numeric fields sent as JSON numbers") {
+      val json =
+        """{ "file" : "foo", "driverCores" : 4, "executorCores" : 2, "numExecutors" : 20 }"""
+      val req = mapper.readValue(json, classOf[CreateBatchRequest])
+      assert(req.driverCores === Some(4))
+      assert(req.executorCores === Some(2))
+      assert(req.numExecutors === Some(20))
+    }
+
+    it("should coerce numeric fields sent as JSON strings") {
+      // A mistyped client that sends "4" instead of 4 must not blow up with a
+      // ClassCastException in BatchSession.createSparkApp -- Jackson coerces the string.
+      val json =
+        """{ "file" : "foo", "driverCores" : "4", "executorCores" : "2", "numExecutors" : "20" }"""
+      val req = mapper.readValue(json, classOf[CreateBatchRequest])
+      assert(req.driverCores === Some(4))
+      assert(req.executorCores === Some(2))
+      assert(req.numExecutors === Some(20))
+      // The unbox that used to throw at BatchSession.scala:95 now succeeds.
+      assert(req.driverCores.map(_ + 1) === Some(5))
+    }
+
+    it("should reject a non-numeric string for a numeric field with a mapping error") {
+      val json = """{ "file" : "foo", "driverCores" : "notanumber" }"""
+      intercept[JsonMappingException] {
+        mapper.readValue(json, classOf[CreateBatchRequest])
+      }
+    }
+
+    it("should treat an empty string as None") {
+      // Jackson's scalar coercion maps "" → null, which Option deserializes as None.
+      val req = mapper.readValue("""{ "file" : "foo", "driverCores" : "" }""",
+        classOf[CreateBatchRequest])
+      assert(req.driverCores === None)
+    }
+
+    it("should coerce whitespace-padded numeric strings") {
+      val req = mapper.readValue(
+        """{ "file" : "foo", "driverCores" : "4 ", "executorCores" : " 2" }""",
+        classOf[CreateBatchRequest])
+      assert(req.driverCores === Some(4))
+      assert(req.executorCores === Some(2))
+    }
+
+    it("should reject fractional numeric strings with a mapping error") {
+      Seq("""{ "file" : "foo", "driverCores" : "4.5" }""",
+          """{ "file" : "foo", "driverCores" : "4.0" }""").foreach { json =>
+        intercept[JsonMappingException] {
+          mapper.readValue(json, classOf[CreateBatchRequest])
+        }
+      }
+    }
+
   }
 
 }
