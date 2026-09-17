@@ -260,6 +260,22 @@ object SparkKubernetesApp extends Logging {
   def getAppSize: Int = appQueue.size()
 
   def clearApps(): Unit = appQueue.clear()
+
+  // Decides whether a newly observed app ID is consistent with the app ID already
+  // latched for this app tag. Returns Right(the app ID to latch going forward), or
+  // Left(an error message) if the tag's app ID changed and monitoring should be rejected
+  // (e.g. a re-attach picked up a different, unrelated Spark app under the same tag).
+  private[utils] def latchAppId(
+      knownAppId: Option[String],
+      observedAppId: String,
+      appTag: String): Either[String, Option[String]] = {
+    knownAppId match {
+      case Some(known) if known != observedAppId =>
+        Left(s"App ID changed for tag $appTag: was $known, now $observedAppId. Rejecting.")
+      case None => Right(Some(observedAppId))
+      case some => Right(some)
+    }
+  }
 }
 
 class SparkKubernetesApp private[utils] (
@@ -281,6 +297,9 @@ class SparkKubernetesApp private[utils] (
   private[utils] var state: SparkApp.State = SparkApp.State.STARTING
   private var kubernetesDiagnostics: IndexedSeq[String] = IndexedSeq.empty[String]
   private var kubernetesAppLog: IndexedSeq[String] = IndexedSeq.empty[String]
+
+  // Latches the first observed app ID; subsequent polls returning a different ID are rejected.
+  @volatile private var knownAppId: Option[String] = appIdOption
 
   private var kubernetesTagToAppIdFailedTimes: Int = _
   private var kubernetesAppMonitorFailedTimes: Int = _
@@ -327,8 +346,24 @@ class SparkKubernetesApp private[utils] (
         return
       }
       val app: KubernetesApplication = appOption.get
-      appPromise.trySuccess(app)
       val appId = app.getApplicationId
+
+      latchAppId(knownAppId, appId, appTag) match {
+        case Left(msg) =>
+          error(msg)
+          // Fail the promise so consumers blocked on Await.result(appPromise.future, ...)
+          // surface the mismatch immediately instead of waiting the full appLookupTimeout.
+          appPromise.tryFailure(new IllegalStateException(msg))
+          // Drive the session to FAILED, destroy the spark-submit process, and mark the
+          // tag as leaked so the monitor doesn't keep polling. Mirrors the treatment of
+          // other terminal failures (e.g. failToGetAppId exhausted).
+          kubernetesDiagnostics = IndexedSeq(msg)
+          failToMonitor()
+          return
+        case Right(updatedKnownAppId) =>
+          knownAppId = updatedKnownAppId
+      }
+      appPromise.trySuccess(app)
 
       Thread.currentThread().setName(s"kubernetesAppMonitorThread-$appId")
       listener.foreach(_.appIdKnown(appId))

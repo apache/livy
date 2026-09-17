@@ -271,6 +271,26 @@ class SparkKubernetesAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite with 
     }
   }
 
+  describe("latchAppId") {
+    it("should latch the observed app ID when none was known yet") {
+      assertResult(Right(Some("app-1")))(
+        SparkKubernetesApp.latchAppId(None, "app-1", "tag-1"))
+    }
+
+    it("should keep the known app ID when the observed ID matches") {
+      assertResult(Right(Some("app-1")))(
+        SparkKubernetesApp.latchAppId(Some("app-1"), "app-1", "tag-1"))
+    }
+
+    it("should reject a different app ID observed under the same tag") {
+      val result = SparkKubernetesApp.latchAppId(Some("app-1"), "app-2", "tag-1")
+      assert(result.isLeft)
+      assert(result.left.get.contains("tag-1"))
+      assert(result.left.get.contains("app-1"))
+      assert(result.left.get.contains("app-2"))
+    }
+  }
+
   describe("KubernetesClientExtensions") {
     it("should build an ingress from the supplied KubernetesApplication") {
       def test(app: KubernetesApplication, expectedAnnotations: Map[String, String]): Unit = {
