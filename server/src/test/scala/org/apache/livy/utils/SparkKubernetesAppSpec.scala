@@ -91,6 +91,58 @@ class SparkKubernetesAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite with 
       }
     }
 
+    def podWithSidecar(phase: String, terminatedExitCode: Option[Int]): Pod = {
+      val builder = new PodBuilder()
+        .withNewStatus()
+          .withPhase(phase)
+        .endStatus()
+        .withNewSpec().endSpec()
+        .withNewMetadata().endMetadata()
+      terminatedExitCode match {
+        case Some(exitCode) =>
+          builder.editStatus()
+            .addNewContainerStatus()
+              .withName("spark-container")
+              .withNewState()
+                .withNewTerminated()
+                  .withExitCode(exitCode)
+                .endTerminated()
+              .endState()
+            .endContainerStatus()
+          .endStatus()
+        case None => ()
+      }
+      builder.build()
+    }
+
+    it("should prefer spark container exit status over pod phase when sidecars are enabled") {
+      def state(pod: Pod, sidecarEnabled: Boolean): String =
+        KubernetesAppReport(
+          Some(pod), Seq.empty, IndexedSeq.empty, None,
+          new LivyConf(false).set(LivyConf.KUBERNETES_SPARK_SIDECAR_ENABLED, sidecarEnabled)
+        ).getApplicationState
+
+      // A sidecar failure marks the pod "Failed" even though the spark container exited 0.
+      assertResult("succeeded") {
+        state(podWithSidecar("Failed", Some(0)), sidecarEnabled = true)
+      }
+      assertResult("failed") {
+        state(podWithSidecar("Running", Some(1)), sidecarEnabled = true)
+      }
+      // Spark container not yet terminated (or not found): fall back to pod phase.
+      assertResult("running") {
+        state(podWithSidecar("Running", None), sidecarEnabled = true)
+      }
+      // getContainerStatuses is null while the pod is pending: no NPE, fall back to phase.
+      assertResult("pending") {
+        state(podWithSidecar("Pending", None), sidecarEnabled = true)
+      }
+      // Sidecars disabled: pod phase is authoritative even if the spark container failed.
+      assertResult("failed") {
+        state(podWithSidecar("Failed", Some(0)), sidecarEnabled = false)
+      }
+    }
+
     def livyConf(lokiEnabled: Boolean): LivyConf = new LivyConf(false)
       .set(LivyConf.KUBERNETES_GRAFANA_LOKI_ENABLED, lokiEnabled)
 
