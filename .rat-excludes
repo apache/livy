@@ -11,7 +11,7 @@ logs/*
 **/dependency-reduced-pom.xml
 **/target/**
 **/bootstrap.min.css
-**/bootstrap.min.js
+**/bootstrap.bundle.min.js
 **/dataTables.bootstrap.min.css
 **/dataTables.bootstrap.min.js
 **/jquery.dataTables.min.js
