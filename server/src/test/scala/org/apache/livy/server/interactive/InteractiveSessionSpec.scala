@@ -56,6 +56,7 @@ class InteractiveSessionSpec extends AnyFunSpec
 
   private var session: InteractiveSession = null
   private val accessManager = new AccessManager(livyConf)
+  private val skipRTests = sys.props.getOrElse("skipRTests", "false").toBoolean
 
   private def createSession(
       sessionStore: SessionStore = mock[SessionStore],
@@ -211,19 +212,21 @@ class InteractiveSessionSpec extends AnyFunSpec
       (scalaResult \ "status").extract[String] should equal ("ok")
       (scalaResult \ "execution_count").extract[Int] should equal (1)
 
-      val rResult = executeStatement("1 + 2", Some("sparkr"))
-      rResult should equal (Extraction.decompose(Map(
-        "status" -> "ok",
-        "execution_count" -> 2,
-        "data" -> Map("text/plain" -> "[1] 3")))
-      )
+      if (!skipRTests) {
+        val rResult = executeStatement("1 + 2", Some("sparkr"))
+        rResult should equal (Extraction.decompose(Map(
+          "status" -> "ok",
+          "execution_count" -> 2,
+          "data" -> Map("text/plain" -> "[1] 3")))
+        )
+      }
     }
 
     withSession("should report an error if accessing an unknown variable") { session =>
       val result = executeStatement("x")
       val expectedResult = Extraction.decompose(Map(
         "status" -> "error",
-        "execution_count" -> 3,
+        "execution_count" -> (if (skipRTests) 2 else 3),
         "ename" -> "NameError",
         "evalue" -> "name 'x' is not defined",
         "traceback" -> List(
