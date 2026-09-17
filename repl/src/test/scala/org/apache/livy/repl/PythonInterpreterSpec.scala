@@ -25,6 +25,7 @@ import org.scalatest.Inside.inside
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.driver.SparkEntries
 import org.apache.livy.sessions._
 
@@ -301,6 +302,8 @@ class PythonInterpreterSpec extends PythonBaseInterpreterSpec with BeforeAndAfte
 
   override def createInterpreter(): Interpreter = {
     val sparkConf = new SparkConf()
+      .set(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST)
+      .set(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST)
     PythonInterpreter(sparkConf, new SparkEntries(sparkConf))
   }
 

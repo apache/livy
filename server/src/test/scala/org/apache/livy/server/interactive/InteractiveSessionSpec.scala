@@ -72,7 +72,9 @@ class InteractiveSessionSpec extends AnyFunSpec
     req.conf = Map(
       SparkLauncher.DRIVER_EXTRA_CLASSPATH -> sys.props("java.class.path"),
       RSCConf.Entry.LIVY_JARS.key() -> "",
-      RSCConf.Entry.RPC_SERVER_ADDRESS.key() -> TestUtils.TEST_BIND_HOST
+      RSCConf.Entry.RPC_SERVER_ADDRESS.key() -> TestUtils.TEST_BIND_HOST,
+      TestUtils.SPARK_DRIVER_HOST -> TestUtils.TEST_BIND_HOST,
+      TestUtils.SPARK_DRIVER_BIND_ADDRESS -> TestUtils.TEST_BIND_HOST
     )
     InteractiveSession.create(0, None, null, None, livyConf, accessManager, req,
       sessionStore, None, None, mockApp)

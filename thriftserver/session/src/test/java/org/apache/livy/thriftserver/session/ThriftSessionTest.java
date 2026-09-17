@@ -55,6 +55,8 @@ public class ThriftSessionTest {
     conf.put("spark.sql.warehouse.dir", warehouse);
     conf.put("spark.sql.catalogImplementation", "in-memory");
     conf.put(RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST);
+    conf.put(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST);
+    conf.put(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST);
 
     livy = new LivyClientBuilder(false)
       .setURI(new URI("rsc:/"))

@@ -45,6 +45,8 @@ class ReplDriverSuite extends AnyFunSuite with LivyBaseUnitTestSuite {
       .setConf(SparkLauncher.EXECUTOR_EXTRA_CLASSPATH, sys.props("java.class.path"))
       .setConf(RSCConf.Entry.LIVY_JARS.key(), "")
       .setConf(RSCConf.Entry.RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST)
+      .setConf(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST)
+      .setConf(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST)
       .setURI(new URI("rsc:/"))
       .setConf(RSCConf.Entry.DRIVER_CLASS.key(), classOf[ReplDriver].getName())
       .setConf(RSCConf.Entry.SESSION_KIND.key(), Spark.toString)

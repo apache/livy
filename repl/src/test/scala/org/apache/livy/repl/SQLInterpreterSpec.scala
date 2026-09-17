@@ -26,6 +26,7 @@ import org.json4s.{DefaultFormats, JValue}
 import org.json4s.JsonAST.{JArray, JNull}
 import org.json4s.JsonDSL._
 
+import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.RSCConf
 import org.apache.livy.rsc.driver.SparkEntries
 
@@ -40,6 +41,8 @@ class SQLInterpreterSpec extends BaseInterpreterSpec {
 
   override def createInterpreter(): Interpreter = {
     val conf = new SparkConf()
+      .set(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST)
+      .set(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST)
     if (sparkEntries == null) {
       sparkEntries = new SparkEntries(conf)
     }

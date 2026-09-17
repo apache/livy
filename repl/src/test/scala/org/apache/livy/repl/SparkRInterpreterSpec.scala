@@ -24,6 +24,7 @@ import org.scalatest.{BeforeAndAfterAll, Outcome}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.driver.SparkEntries
 
 class SparkRInterpreterSpec extends BaseInterpreterSpec {
@@ -38,6 +39,8 @@ class SparkRInterpreterSpec extends BaseInterpreterSpec {
 
   override def createInterpreter(): Interpreter = {
     val sparkConf = new SparkConf()
+      .set(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST)
+      .set(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST)
     SparkRInterpreter(sparkConf, new SparkEntries(sparkConf))
   }
 

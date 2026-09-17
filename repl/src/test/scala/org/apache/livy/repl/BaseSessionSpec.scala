@@ -49,6 +49,8 @@ abstract class BaseSessionSpec(kind: Kind)
   }
 
   private val sparkConf = new SparkConf()
+    .set(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST)
+    .set(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST)
 
   protected def execute(session: Session)(code: String): Statement = {
     val id = session.execute(code)
