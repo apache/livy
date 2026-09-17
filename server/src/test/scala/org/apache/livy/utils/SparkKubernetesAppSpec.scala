@@ -27,7 +27,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatestplus.mockito.MockitoSugar._
 
 import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
-import org.apache.livy.utils.KubernetesConstants.SPARK_APP_TAG_LABEL
+import org.apache.livy.utils.KubernetesConstants.{SPARK_APP_ID_LABEL, SPARK_APP_TAG_LABEL}
 
 class SparkKubernetesAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite with BeforeAndAfterAll {
 
@@ -315,6 +315,23 @@ class SparkKubernetesAppSpec extends AnyFunSpec with LivyBaseUnitTestSuite with 
           s"app2-svc.ns-2.svc.cluster.local",
         "nginx.ingress.kubernetes.io/service-upstream" -> "true"
       ))
+    }
+  }
+
+  describe("KubernetesApplication") {
+    // The namespace/tag/id read here drive namespace adoption on recovery, the leaked-app
+    // GC sweep and the application report; verify they are surfaced from the driver pod.
+    it("should expose the driver pod's namespace, tag and id") {
+      val pod = new PodBuilder().withNewMetadata().withName("driver")
+        .withNamespace("team-b")
+        .addToLabels(SPARK_APP_TAG_LABEL, "tag-x")
+        .addToLabels(SPARK_APP_ID_LABEL, "app-x")
+        .endMetadata().withNewSpec().endSpec().build()
+      val app = new KubernetesApplication(pod)
+      assert(app.getApplicationNamespace === "team-b")
+      assert(app.getApplicationTag === "tag-x")
+      assert(app.getApplicationId === "app-x")
+      assert(app.getApplicationPod === pod)
     }
   }
 
