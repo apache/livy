@@ -62,7 +62,8 @@ class CreateInteractiveRequestSpec extends AnyFunSpec with LivyBaseUnitTestSuite
     it("should coerce numeric fields sent as JSON strings") {
       // Same Option[Int] erasure fix as CreateBatchRequest — string "4" must coerce to 4.
       val json =
-        """{ "kind" : "pyspark", "driverCores" : "4", "executorCores" : "2", "numExecutors" : "20" }"""
+        """{ "kind" : "pyspark", "driverCores" : "4", "executorCores" : "2", """ +
+          """"numExecutors" : "20" }"""
       val req = mapper.readValue(json, classOf[CreateInteractiveRequest])
       assert(req.driverCores === Some(4))
       assert(req.executorCores === Some(2))
