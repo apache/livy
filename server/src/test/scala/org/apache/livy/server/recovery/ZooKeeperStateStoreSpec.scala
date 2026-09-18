@@ -23,6 +23,7 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.api._
 import org.apache.curator.framework.listen.Listenable
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
+import org.apache.zookeeper.KeeperException.NodeExistsException
 import org.apache.zookeeper.data.Stat
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
@@ -104,6 +105,35 @@ class ZooKeeperStateStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
 
         verify(f.curatorClient).start()
         verify(p).forPath(prefixedKey, Array[Byte](49))
+      }
+    }
+
+    it("tryExclusiveCreate should create key and return true if it doesn't exist") {
+      withMock { f =>
+        val createBuilder = mock[CreateBuilder]
+        when(f.curatorClient.create()).thenReturn(createBuilder)
+        val p = mock[ProtectACLCreateModeStatPathAndBytesable[String]]
+        when(createBuilder.creatingParentsIfNeeded()).thenReturn(p)
+
+        val created = f.stateStore.tryExclusiveCreate("key", 1.asInstanceOf[Object])
+
+        created shouldBe true
+        verify(p).forPath(prefixedKey, Array[Byte](49))
+      }
+    }
+
+    it("tryExclusiveCreate should return false if the key already exists") {
+      withMock { f =>
+        val createBuilder = mock[CreateBuilder]
+        when(f.curatorClient.create()).thenReturn(createBuilder)
+        val p = mock[ProtectACLCreateModeStatPathAndBytesable[String]]
+        when(createBuilder.creatingParentsIfNeeded()).thenReturn(p)
+        when(p.forPath(prefixedKey, Array[Byte](49)))
+          .thenThrow(new NodeExistsException(prefixedKey))
+
+        val created = f.stateStore.tryExclusiveCreate("key", 1.asInstanceOf[Object])
+
+        created shouldBe false
       }
     }
 
