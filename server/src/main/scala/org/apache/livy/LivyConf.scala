@@ -320,8 +320,9 @@ object LivyConf {
 
   // Whether Livy fetches the driver pod's Kubernetes logs each poll cycle. When
   // disabled, Livy still polls pod state and diagnostics, but /sessions/:id/log and
-  // /batches/:id/log won't include fresh Kubernetes driver logs. Useful when driver
-  // logs are collected externally and the repeated pods/<driver>/log calls are not needed.
+  // /batches/:id/log will not include any Kubernetes driver log lines at all. Useful
+  // when driver logs are collected externally and the repeated pods/<driver>/log calls
+  // are not needed.
   val KUBERNETES_DRIVER_LOG_POLLING_ENABLED =
     Entry("livy.server.kubernetes.driver-log-polling.enabled", true)
 
