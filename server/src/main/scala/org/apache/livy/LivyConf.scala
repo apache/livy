@@ -92,8 +92,8 @@ object LivyConf {
       "max-age=31536000; includeSubDomains")
   val SECURITY_HEADERS_CONTENT_SECURITY_POLICY =
     Entry("livy.server.http.header.Content-Security-Policy",
-      "default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self'; " +
-        "frame-src 'self';")
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data:; frame-src 'self';")
 
   val IMPERSONATION_ENABLED = Entry("livy.impersonation.enabled", false)
   val SUPERUSERS = Entry("livy.superusers", null)
