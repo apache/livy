@@ -67,6 +67,8 @@ abstract class BaseInteractiveServletSpec
       RSCConf.Entry.LIVY_JARS.key() -> "",
       RSCConf.Entry.CLIENT_IN_PROCESS.key() -> inProcess.toString,
       RSCConf.Entry.RPC_SERVER_ADDRESS.key() -> TestUtils.TEST_BIND_HOST,
+      TestUtils.SPARK_DRIVER_HOST -> TestUtils.TEST_BIND_HOST,
+      TestUtils.SPARK_DRIVER_BIND_ADDRESS -> TestUtils.TEST_BIND_HOST,
       SparkLauncher.SPARK_MASTER -> "local",
       SparkLauncher.DRIVER_EXTRA_CLASSPATH -> classpath,
       SparkLauncher.EXECUTOR_EXTRA_CLASSPATH -> classpath

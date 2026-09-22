@@ -241,7 +241,7 @@ class MiniCluster(config: Map[String, String]) extends Cluster with MiniClusterU
       "spark.executor.instances" -> "1",
       "spark.scheduler.minRegisteredResourcesRatio" -> "0.0",
       "spark.ui.enabled" -> "false",
-      "spark.driver.host" -> TestUtils.TEST_BIND_HOST,
+      TestUtils.SPARK_DRIVER_HOST -> TestUtils.TEST_BIND_HOST,
       "spark.yarn.appMasterEnv.SPARK_LOCAL_IP" -> TestUtils.TEST_BIND_HOST,
       "spark.executorEnv.SPARK_LOCAL_IP" -> TestUtils.TEST_BIND_HOST,
       // Propagate the host shell PATH into the YARN AM and executor

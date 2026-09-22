@@ -191,6 +191,8 @@ object ScalaClientTest {
     conf.put(CLIENT_SHUTDOWN_TIMEOUT.key(), "30s")
     conf.put(LIVY_JARS.key, "")
     conf.put(RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST)
+    conf.put(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST)
+    conf.put(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST)
     conf
   }
 

@@ -48,11 +48,21 @@ abstract class ThriftServerBaseTest extends AnyFunSuite with BeforeAndAfterAll {
     formatSparkVersion(sparkVersion)
   }
 
-  def jdbcUri(defaultDb: String, sessionConf: String*): String = if (mode == ServerMode.http) {
-    s"jdbc:hive2://localhost:$port/$defaultDb?hive.server2.transport.mode=http;" +
-      s"hive.server2.thrift.http.path=cliservice;${sessionConf.mkString(";")}"
-  } else {
-    s"jdbc:hive2://localhost:$port/$defaultDb?${sessionConf.mkString(";")}"
+  def jdbcUri(defaultDb: String, sessionConf: String*): String = {
+    // Pin the Spark driver to loopback so that sessions launched by the Thrift server bind and
+    // advertise a locally reachable address. Without this, on hosts whose hostname resolves to a
+    // non-bindable LAN IP (e.g. some macOS setups) the Spark driver / block manager fails with
+    // "Can't assign requested address" or the executor times out fetching REPL classes.
+    val driverConf = Seq(
+      s"livy.session.conf.${TestUtils.SPARK_DRIVER_HOST}=${TestUtils.TEST_BIND_HOST}",
+      s"livy.session.conf.${TestUtils.SPARK_DRIVER_BIND_ADDRESS}=${TestUtils.TEST_BIND_HOST}")
+    val allConf = driverConf ++ sessionConf
+    if (mode == ServerMode.http) {
+      s"jdbc:hive2://localhost:$port/$defaultDb?hive.server2.transport.mode=http;" +
+        s"hive.server2.thrift.http.path=cliservice;${allConf.mkString(";")}"
+    } else {
+      s"jdbc:hive2://localhost:$port/$defaultDb?${allConf.mkString(";")}"
+    }
   }
 
   override def beforeAll(): Unit = {

@@ -82,6 +82,13 @@ public class TestSparkClient {
     conf.put("spark.sql.catalogImplementation", hiveSupport ? "hive" : "in-memory");
     conf.put(RETAINED_SHARE_VARIABLES.key(), "2");
     conf.put(RPC_SERVER_ADDRESS.key(), TestUtils.TEST_BIND_HOST);
+    // Pin Spark's own driver binding to loopback so this test passes on macOS
+    // without requiring an externally-exported SPARK_LOCAL_IP=127.0.0.1. On
+    // macOS InetAddress.getLocalHost resolves to the LAN IP, which a peer
+    // process on the same host cannot reach, causing connect timeouts.
+    // Harmless on Linux CI where loopback is equally reachable.
+    conf.put(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST);
+    conf.put(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST);
     return conf;
   }
 

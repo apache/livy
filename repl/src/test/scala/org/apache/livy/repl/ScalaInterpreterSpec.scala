@@ -21,6 +21,7 @@ import org.apache.spark.SparkConf
 import org.json4s.{DefaultFormats, JValue}
 import org.json4s.JsonDSL._
 
+import org.apache.livy.client.common.TestUtils
 import org.apache.livy.rsc.RSCConf
 
 class ScalaInterpreterSpec extends BaseInterpreterSpec {
@@ -32,7 +33,9 @@ class ScalaInterpreterSpec extends BaseInterpreterSpec {
   // against both scala-2.12 and scala-2.13 builds.
 
   override def createInterpreter(): Interpreter =
-    new SparkInterpreter(new SparkConf())
+    new SparkInterpreter(new SparkConf()
+      .set(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST)
+      .set(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST))
 
   it should "execute `1 + 2` == 3" in withInterpreter { interpreter =>
     val response = interpreter.execute("1 + 2")

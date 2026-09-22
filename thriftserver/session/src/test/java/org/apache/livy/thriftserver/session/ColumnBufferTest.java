@@ -40,6 +40,8 @@ import org.apache.spark.sql.types.StructField;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import org.apache.livy.client.common.TestUtils;
+
 public class ColumnBufferTest {
 
   @Test
@@ -50,6 +52,8 @@ public class ColumnBufferTest {
       .master("local")
       .appName(getClass().getName())
       .config("spark.sql.warehouse.dir", warehouse)
+      .config(TestUtils.SPARK_DRIVER_HOST, TestUtils.TEST_BIND_HOST)
+      .config(TestUtils.SPARK_DRIVER_BIND_ADDRESS, TestUtils.TEST_BIND_HOST)
       .getOrCreate();
 
     try {
