@@ -199,7 +199,7 @@ class BatchSessionSpec
       val req = new CreateBatchRequest()
       val name = Some("Test Batch Session")
       val mockApp = mock[SparkApp]
-      val m = BatchRecoveryMetadata(99, name, None, "appTag", null, None)
+      val m = BatchRecoveryMetadata(99, name, None, "appTag", null, None, "")
       val batch = BatchSession.recover(m, conf, sessionStore, Some(mockApp))
 
       batch.state shouldBe (SessionState.Recovering)
@@ -216,5 +216,14 @@ class BatchSessionSpec
           testRecoverSession(name)
         }
       }
+
+    it("should propagate the stored namespace through recovery metadata") {
+      val conf = new LivyConf()
+      val mockApp = mock[SparkApp]
+      val m = BatchRecoveryMetadata(
+        101, Some("ns-session"), None, "appTag", "owner", None, "team-a")
+      val batch = BatchSession.recover(m, conf, sessionStore, Some(mockApp))
+      batch.recoveryMetadata.asInstanceOf[BatchRecoveryMetadata].namespace shouldBe "team-a"
+    }
   }
 }

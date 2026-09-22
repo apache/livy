@@ -17,9 +17,11 @@
 
 package org.apache.livy.utils
 
-import java.io.IOException
+import java.io.{File, FileInputStream, IOException}
+import java.util.Properties
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import org.apache.hadoop.conf.Configuration
 
@@ -60,12 +62,73 @@ trait SparkAppListener {
  */
 object SparkApp extends Logging {
   private val SPARK_YARN_TAG_KEY = "spark.yarn.tags"
-
+  val SPARK_KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   object State extends Enumeration {
     val STARTING, RUNNING, FINISHED, FAILED, KILLED = Value
   }
   type State = State.Value
 
+  val DEFAULT_KUBERNETES_NAMESPACE = "default"
+
+  /**
+   * Resolve the Kubernetes namespace a Spark application should run in.
+   *
+   * The namespace is looked up, in order of precedence, from:
+   *   1. the session's Spark configuration ([[SPARK_KUBERNETES_NAMESPACE_KEY]]),
+   *   2. `spark-defaults.conf` in the Spark config directory (`$SPARK_CONF_DIR` if set,
+   *      otherwise `$SPARK_HOME/conf`), if present,
+   *   3. the [[DEFAULT_KUBERNETES_NAMESPACE]] fallback.
+   *
+   * The namespace is only meaningful on Kubernetes, so for any other cluster
+   * manager (YARN, local) an empty string is returned without touching the
+   * filesystem.
+   */
+  def getNamespace(conf: Map[String, String], livyConf: LivyConf): String = {
+    if (!livyConf.isRunningOnKubernetes()) {
+      return ""
+    }
+    conf.get(SPARK_KUBERNETES_NAMESPACE_KEY).filter(_.nonEmpty).getOrElse {
+      namespaceFromSparkDefaults(livyConf).getOrElse(DEFAULT_KUBERNETES_NAMESPACE)
+    }
+  }
+
+  /**
+   * Resolve the Spark configuration directory the same way Spark's launch scripts do:
+   * honor `$SPARK_CONF_DIR` if set, otherwise fall back to `$SPARK_HOME/conf`. Livy runs
+   * spark-submit as a child process, which reads spark-defaults.conf from this directory;
+   * resolving it identically here keeps the monitored namespace consistent with where the
+   * driver pod is actually created.
+   */
+  private def sparkConfDir(livyConf: LivyConf): Option[String] = {
+    sys.env.get("SPARK_CONF_DIR").filter(_.nonEmpty)
+      .orElse(livyConf.sparkHome().map(home => s"$home${File.separator}conf"))
+  }
+
+  private def namespaceFromSparkDefaults(livyConf: LivyConf): Option[String] = {
+    sparkConfDir(livyConf).flatMap { confDir =>
+      val sparkDefaults = new File(confDir, "spark-defaults.conf")
+      if (!sparkDefaults.isFile) {
+        None
+      } else {
+        val in = new FileInputStream(sparkDefaults)
+        try {
+          val properties = new Properties()
+          properties.load(in)
+          Option(properties.getProperty(SPARK_KUBERNETES_NAMESPACE_KEY)).filter(_.nonEmpty)
+        } catch {
+          case NonFatal(e) =>
+            // A malformed spark-defaults.conf (e.g. an invalid unicode escape, which
+            // java.util.Properties rejects) must not abort session creation; fall
+            // back to the default namespace instead.
+            warn(s"Could not read $sparkDefaults for the Kubernetes namespace; " +
+              s"falling back to the default namespace: ${e.getMessage}")
+            None
+        } finally {
+          in.close()
+        }
+      }
+    }
+  }
   /**
    * Return cluster manager dependent SparkConf.
    *
@@ -152,11 +215,12 @@ object SparkApp extends Logging {
       appId: Option[String],
       process: Option[LineBufferedProcess],
       livyConf: LivyConf,
-      listener: Option[SparkAppListener]): SparkApp = {
+      listener: Option[SparkAppListener],
+      extrasMap: Map[String, String]): SparkApp = {
     if (livyConf.isRunningOnYarn()) {
       new SparkYarnApp(uniqueAppTag, appId, process, listener, livyConf)
     } else if (livyConf.isRunningOnKubernetes()) {
-      new SparkKubernetesApp(uniqueAppTag, appId, process, listener, livyConf)
+      new SparkKubernetesApp(uniqueAppTag, appId, process, listener, livyConf, extrasMap)
     } else {
       require(process.isDefined, "process must not be None when Livy master is not YARN or" +
         "Kubernetes.")
