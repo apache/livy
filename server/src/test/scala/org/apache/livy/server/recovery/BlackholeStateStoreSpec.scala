@@ -31,6 +31,10 @@ class BlackholeStateStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
       stateStore.set("", 1.asInstanceOf[Object])
     }
 
+    it("tryExclusiveCreate should return true and not throw") {
+      stateStore.tryExclusiveCreate("", 1.asInstanceOf[Object]) shouldBe true
+    }
+
     it("get should return None") {
       val v = stateStore.get[Object]("")
       v shouldBe None

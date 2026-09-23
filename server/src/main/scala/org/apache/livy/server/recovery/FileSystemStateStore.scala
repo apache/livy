@@ -20,6 +20,7 @@ package org.apache.livy.server.recovery
 import java.io.{FileNotFoundException, IOException}
 import java.net.URI
 import java.util
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import scala.reflect.ClassTag
@@ -106,6 +107,56 @@ class FileSystemStateStore(
     } catch {
       case NonFatal(e) => // Swallow the exception.
     }
+  }
+
+  override def tryExclusiveCreate(key: String, value: Object): Boolean = {
+    // Write to a uniquely-named temp file first, then atomically rename it into place
+    // without overwrite -- same write-then-rename shape as set(), so a crash mid-write
+    // never leaves a partially-written file at the destination. Omitting Rename.OVERWRITE
+    // still makes the claim exclusive: the rename fails atomically with
+    // FileAlreadyExistsException if another writer already claimed the key in the
+    // meantime, so no separate (and racy) exists-check is needed.
+    val tmpPath = absPath(s"$key.${UUID.randomUUID()}.tmp")
+    val createFlag = util.EnumSet.of(CreateFlag.CREATE, CreateFlag.OVERWRITE)
+
+    usingResource(fileContext.create(tmpPath, createFlag, CreateOpts.createParent())) { tmpFile =>
+      tmpFile.write(serializeToBytes(value))
+      tmpFile.close()
+    }
+
+    // Tracks whether the rename below actually moved the temp file into place, so the
+    // finally block below knows whether there's still a temp file left to clean up --
+    // covers not just the expected FileAlreadyExistsException but any other exception
+    // the rename might throw.
+    var renamed = false
+    val claimed =
+      try {
+        try {
+          fileContext.rename(tmpPath, absPath(key), Rename.NONE)
+          renamed = true
+          true
+        } catch {
+          case _: FileAlreadyExistsException =>
+            false
+        }
+      } finally {
+        if (!renamed) {
+          try {
+            fileContext.delete(tmpPath, false)
+          } catch {
+            case NonFatal(e) => // Swallow the exception.
+          }
+        }
+      }
+
+    try {
+      val crcPath = new Path(tmpPath.getParent, s".${tmpPath.getName}.crc")
+      fileContext.delete(crcPath, false)
+    } catch {
+      case NonFatal(e) => // Swallow the exception.
+    }
+
+    claimed
   }
 
   override def get[T: ClassTag](key: String): Option[T] = {

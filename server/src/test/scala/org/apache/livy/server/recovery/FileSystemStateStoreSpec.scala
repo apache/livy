@@ -47,6 +47,14 @@ class FileSystemStateStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
       override def describeTo(d: Description): Unit = { matcher.describeTo(d) }
     })
 
+    def pathMatching(pattern: String): Path = argThat(new ArgumentMatcher[Path] {
+      override def matches(path: Any): Boolean = path.toString.matches(pattern)
+
+      override def describeTo(d: Description): Unit = {
+        d.appendText(s"path matching $pattern")
+      }
+    })
+
     def makeConf(): LivyConf = {
       val conf = new LivyConf()
       conf.set(LivyConf.RECOVERY_STATE_STORE_URL, "file://tmp/")
@@ -111,6 +119,65 @@ class FileSystemStateStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
 
       verify(fileContext).rename(pathEq("/key.tmp"), pathEq("/key"), equal(Rename.OVERWRITE))
       verify(fileContext).delete(pathEq("/.key.tmp.crc"), equal(false))
+    }
+
+    it("tryExclusiveCreate should write to a temp file, then rename it into place " +
+      "without overwrite, and return true if the key doesn't exist") {
+      val fileContext = mockFileContext("700")
+      val outputStream = mock[FSDataOutputStream]
+      val tmpPathPattern = "/key\\..*\\.tmp"
+      when(fileContext.create(
+        pathMatching(tmpPathPattern), any[util.EnumSet[CreateFlag]], any[CreateOpts]))
+        .thenReturn(outputStream)
+
+      val stateStore = new FileSystemStateStore(makeConf(), Some(fileContext))
+
+      val created = stateStore.tryExclusiveCreate("key", "value")
+
+      created shouldBe true
+      verify(outputStream).write(""""value"""".getBytes)
+      verify(outputStream, atLeastOnce).close()
+      verify(fileContext).rename(pathMatching(tmpPathPattern), pathEq("/key"), equal(Rename.NONE))
+      verify(fileContext).delete(pathMatching("/\\.key\\..*\\.tmp\\.crc"), equal(false))
+    }
+
+    it("tryExclusiveCreate should return false and clean up its temp file if the key " +
+      "already exists") {
+      val fileContext = mockFileContext("700")
+      val outputStream = mock[FSDataOutputStream]
+      val tmpPathPattern = "/key\\..*\\.tmp"
+      when(fileContext.create(
+        pathMatching(tmpPathPattern), any[util.EnumSet[CreateFlag]], any[CreateOpts]))
+        .thenReturn(outputStream)
+      when(fileContext.rename(pathMatching(tmpPathPattern), pathEq("/key"), equal(Rename.NONE)))
+        .thenThrow(new FileAlreadyExistsException("Unit test"))
+
+      val stateStore = new FileSystemStateStore(makeConf(), Some(fileContext))
+
+      stateStore.tryExclusiveCreate("key", "value") shouldBe false
+
+      // The temp file must not be left behind once we know we lost the claim race.
+      verify(fileContext).delete(pathMatching(tmpPathPattern), equal(false))
+    }
+
+    it("tryExclusiveCreate should clean up its temp file and rethrow if rename fails " +
+      "with something other than FileAlreadyExistsException") {
+      val fileContext = mockFileContext("700")
+      val outputStream = mock[FSDataOutputStream]
+      val tmpPathPattern = "/key\\..*\\.tmp"
+      when(fileContext.create(
+        pathMatching(tmpPathPattern), any[util.EnumSet[CreateFlag]], any[CreateOpts]))
+        .thenReturn(outputStream)
+      when(fileContext.rename(pathMatching(tmpPathPattern), pathEq("/key"), equal(Rename.NONE)))
+        .thenThrow(new IOException("Unit test"))
+
+      val stateStore = new FileSystemStateStore(makeConf(), Some(fileContext))
+
+      intercept[IOException](stateStore.tryExclusiveCreate("key", "value"))
+
+      // Even though the failure wasn't a lost claim race, the temp file must still be
+      // cleaned up instead of leaking.
+      verify(fileContext).delete(pathMatching(tmpPathPattern), equal(false))
     }
 
     it("get should read file") {
