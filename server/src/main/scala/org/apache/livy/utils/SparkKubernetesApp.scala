@@ -625,11 +625,10 @@ private[utils] case class KubernetesAppReport(driver: Option[Pod], executors: Se
     if (!livyConf.getBoolean(LivyConf.KUBERNETES_SPARK_SIDECAR_ENABLED)) {
       return phase
     }
-    if (phase != KubernetesApplicationState.RUNNING) {
-      return phase
-    }
-    // if the POD is still running, check spark container termination status
-    // default to pod phase if container state is indeterminate.
+    // When sidecars are enabled, prefer spark container's exit status over
+    // pod phase since a sidecar failure can mark the pod as "failed" even
+    // if the driver exited successfully. Default to pod phase if the spark
+    // container cannot be found (e.g. misconfigured container name).
     getTerminalState(podStatus).getOrElse(phase)
   }
 
@@ -638,7 +637,7 @@ private[utils] case class KubernetesAppReport(driver: Option[Pod], executors: Se
   def getTerminalState(podStatus: PodStatus): Option[String] = {
     import scala.collection.JavaConverters._
     val sparkContainerName = livyConf.get(LivyConf.KUBERNETES_SPARK_CONTAINER_NAME)
-    for (c <- podStatus.getContainerStatuses.asScala) {
+    for (c <- Option(podStatus.getContainerStatuses).map(_.asScala).getOrElse(Nil)) {
       if (c.getName ==  sparkContainerName && c.getState.getTerminated != null) {
         val exitCode = c.getState.getTerminated.getExitCode
         if (exitCode == 0) {
