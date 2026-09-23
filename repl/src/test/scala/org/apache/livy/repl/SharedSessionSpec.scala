@@ -108,6 +108,7 @@ class SharedSessionSpec extends BaseSessionSpec(Shared) {
   }
 
   it should "execute `1 + 2 = 3` in R" in withSession { session =>
+    assume(!sys.props.getOrElse("skipRTests", "false").toBoolean, "Skipping R tests.")
     val statement = execute(session, "1 + 2", "sparkr")
     statement.id should be (0)
 
