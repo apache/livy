@@ -160,6 +160,26 @@ class FileSystemStateStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
       verify(fileContext).delete(pathMatching(tmpPathPattern), equal(false))
     }
 
+    it("tryExclusiveCreate should clean up its temp file and rethrow if rename fails " +
+      "with something other than FileAlreadyExistsException") {
+      val fileContext = mockFileContext("700")
+      val outputStream = mock[FSDataOutputStream]
+      val tmpPathPattern = "/key\\..*\\.tmp"
+      when(fileContext.create(
+        pathMatching(tmpPathPattern), any[util.EnumSet[CreateFlag]], any[CreateOpts]))
+        .thenReturn(outputStream)
+      when(fileContext.rename(pathMatching(tmpPathPattern), pathEq("/key"), equal(Rename.NONE)))
+        .thenThrow(new IOException("Unit test"))
+
+      val stateStore = new FileSystemStateStore(makeConf(), Some(fileContext))
+
+      intercept[IOException](stateStore.tryExclusiveCreate("key", "value"))
+
+      // Even though the failure wasn't a lost claim race, the temp file must still be
+      // cleaned up instead of leaking.
+      verify(fileContext).delete(pathMatching(tmpPathPattern), equal(false))
+    }
+
     it("get should read file") {
       val fileContext = mockFileContext("700")
       abstract class MockInputStream extends InputStream with Seekable with PositionedReadable {}

@@ -124,14 +124,29 @@ class FileSystemStateStore(
       tmpFile.close()
     }
 
+    // Tracks whether the rename below actually moved the temp file into place, so the
+    // finally block below knows whether there's still a temp file left to clean up --
+    // covers not just the expected FileAlreadyExistsException but any other exception
+    // the rename might throw.
+    var renamed = false
     val claimed =
       try {
-        fileContext.rename(tmpPath, absPath(key), Rename.NONE)
-        true
-      } catch {
-        case _: FileAlreadyExistsException =>
-          fileContext.delete(tmpPath, false)
-          false
+        try {
+          fileContext.rename(tmpPath, absPath(key), Rename.NONE)
+          renamed = true
+          true
+        } catch {
+          case _: FileAlreadyExistsException =>
+            false
+        }
+      } finally {
+        if (!renamed) {
+          try {
+            fileContext.delete(tmpPath, false)
+          } catch {
+            case NonFatal(e) => // Swallow the exception.
+          }
+        }
       }
 
     try {
