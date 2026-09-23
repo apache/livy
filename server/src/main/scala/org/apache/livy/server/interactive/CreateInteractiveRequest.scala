@@ -17,6 +17,8 @@
 
 package org.apache.livy.server.interactive
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+
 import org.apache.livy.sessions.{Kind, Shared}
 
 class CreateInteractiveRequest {
@@ -26,9 +28,13 @@ class CreateInteractiveRequest {
   var pyFiles: List[String] = List()
   var files: List[String] = List()
   var driverMemory: Option[String] = None
+  // contentAs pins the element type past erasure so Jackson coerces numeric strings (e.g. "4").
+  @JsonDeserialize(contentAs = classOf[java.lang.Integer])
   var driverCores: Option[Int] = None
   var executorMemory: Option[String] = None
+  @JsonDeserialize(contentAs = classOf[java.lang.Integer])
   var executorCores: Option[Int] = None
+  @JsonDeserialize(contentAs = classOf[java.lang.Integer])
   var numExecutors: Option[Int] = None
   var archives: List[String] = List()
   var queue: Option[String] = None
