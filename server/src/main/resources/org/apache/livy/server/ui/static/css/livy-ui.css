@@ -50,3 +50,16 @@ td .progress {
 #session-summary {
   margin: 20px 0;
 }
+
+/*
+ * Bootstrap styles select.custom-select elements with an inline SVG arrow
+ * loaded from a data: URI background image, which the default
+ * Content-Security-Policy (img-src 'self') blocks:
+ * https://getbootstrap.com/docs/4.6/components/input-group/#custom-select
+ * Fall back to the browser's native <select> appearance instead.
+ */
+.custom-select {
+  appearance: auto;
+  background: #fff;
+  padding-right: .75rem;
+}
