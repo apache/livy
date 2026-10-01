@@ -23,8 +23,8 @@ import java.util.concurrent.TimeUnit
 
 import scala.concurrent.duration.Duration
 
-import org.mockito.Matchers
-import org.mockito.Matchers.anyObject
+import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funspec.AnyFunSpec
@@ -112,7 +112,7 @@ class BatchSessionSpec
       val expectedAppId = "APPID"
       batch.appIdKnown(expectedAppId)
       verify(sessionStore, atLeastOnce()).save(
-        Matchers.eq(BatchSession.RECOVERY_SESSION_TYPE), anyObject())
+        ArgumentMatchers.eq(BatchSession.RECOVERY_SESSION_TYPE), any())
       batch.appId shouldEqual Some(expectedAppId)
 
       val expectedAppInfo = AppInfo(Some("DRIVER LOG URL"), Some("SPARK UI URL"))
@@ -207,7 +207,7 @@ class BatchSessionSpec
 
       batch.appIdKnown("appId")
       verify(sessionStore, atLeastOnce()).save(
-        Matchers.eq(BatchSession.RECOVERY_SESSION_TYPE), anyObject())
+        ArgumentMatchers.eq(BatchSession.RECOVERY_SESSION_TYPE), any())
     }
 
     Seq[Option[String]](None, Some("Test Batch Session"), null)

@@ -26,7 +26,7 @@ import scala.concurrent.Future
 import scala.language.postfixOps
 
 import org.json4s.jackson.Json4sScalaModule
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito.when
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer

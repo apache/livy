@@ -101,7 +101,7 @@
          and metrics-healthchecks on 3.1.0 causes a NoClassDefFoundError for
          HealthCheckFilter at runtime (the class moved in Dropwizard 4.x). -->
     <metrics.version>4.2.19</metrics.version>
-    <mockito.version>1.10.19</mockito.version>
+    <mockito.version>3.4.6</mockito.version>
     <!-- Spark 4.1.2 depends on Netty 4.2.7 and calls the new 4.2-only
          `KQueueIoHandler`; pinning to a 4.1.x line here would let Livy's
          `netty-all` win and hide that class from Spark's classpath. -->
@@ -265,7 +265,7 @@
 
     <dependency>
       <groupId>org.mockito</groupId>
-      <artifactId>mockito-all</artifactId>
+      <artifactId>mockito-core</artifactId>
       <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
