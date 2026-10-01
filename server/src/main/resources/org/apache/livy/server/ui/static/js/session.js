@@ -126,6 +126,7 @@ function loadStatementsTable(statements) {
        "</tr>"
     );
   });
+  applyProgressBarWidths("#session-statements .statements-table-body");
 }
 
 $(document).ready(function () {
