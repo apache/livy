@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.ScalaFutures

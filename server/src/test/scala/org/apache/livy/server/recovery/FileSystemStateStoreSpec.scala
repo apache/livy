@@ -24,11 +24,9 @@ import org.apache.hadoop.fs._
 import org.apache.hadoop.fs.Options.{CreateOpts, Rename}
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.hdfs.DistributedFileSystem
-import org.hamcrest.Description
 import org.mockito.ArgumentMatcher
-import org.mockito.Matchers.{any, anyInt, argThat, eq => equal}
+import org.mockito.ArgumentMatchers.{any, anyInt, argThat, eq => equal}
 import org.mockito.Mockito.{atLeastOnce, spy, verify, when}
-import org.mockito.internal.matchers.Equals
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.funspec.AnyFunSpec
@@ -40,11 +38,7 @@ import org.apache.livy.{LivyBaseUnitTestSuite, LivyConf}
 class FileSystemStateStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
   describe("FileSystemStateStore") {
     def pathEq(wantedPath: String): Path = argThat(new ArgumentMatcher[Path] {
-      private val matcher = new Equals(wantedPath)
-
-      override def matches(path: Any): Boolean = matcher.matches(path.toString)
-
-      override def describeTo(d: Description): Unit = { matcher.describeTo(d) }
+      override def matches(path: Path): Boolean = path.toString == wantedPath
     })
 
     def makeConf(): LivyConf = {

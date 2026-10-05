@@ -28,7 +28,7 @@ import javax.servlet.http.HttpServletRequest
 import scala.concurrent.{ExecutionContext, Future}
 
 import org.mockito.ArgumentCaptor
-import org.mockito.Matchers.{eq => meq, _}
+import org.mockito.ArgumentMatchers.{eq => meq, _}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpecLike
