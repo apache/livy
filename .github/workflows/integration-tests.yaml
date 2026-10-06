@@ -19,7 +19,6 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
   MAVEN_OPTS: -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3
 jobs:
   build:
@@ -39,10 +38,10 @@ jobs:
     steps:
     -
       name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
     -
       name: Cache local Maven repository
-      uses: actions/cache@v3
+      uses: actions/cache@v6
       with:
         path: |
           /root/.m2/repository
@@ -66,4 +65,4 @@ jobs:
       run: mvn -Pthriftserver ${{ matrix.maven_profile }} -DskipTests -Dmaven.javadoc.skip=true -B -V -e verify
     -
       name: Upload coverage to codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v7
