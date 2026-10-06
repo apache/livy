@@ -110,8 +110,16 @@ function divWrap(inner) {
 
 function progressBar(double) {
   var cent = +(double * 100).toFixed(3);
-  return '<div class="progress"><div class="progress-bar" style="width:'
-    + cent + '%"><span>' + cent + '%</span></div></div>';
+  return '<div class="progress"><div class="progress-bar" data-width="'
+    + cent + '"><span>' + cent + '%</span></div></div>';
+}
+
+// Inline style attributes are blocked by the default Content-Security-Policy,
+// so progress bar widths are applied through CSSOM instead.
+function applyProgressBarWidths(container) {
+  $(container).find(".progress-bar[data-width]").each(function() {
+    this.style.width = $(this).attr("data-width") + "%";
+  });
 }
 
 function getPathArray() {

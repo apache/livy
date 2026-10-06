@@ -11,11 +11,11 @@ logs/*
 **/dependency-reduced-pom.xml
 **/target/**
 **/bootstrap.min.css
-**/bootstrap.min.js
-**/dataTables.bootstrap.min.css
-**/dataTables.bootstrap.min.js
+**/bootstrap.bundle.min.js
+**/dataTables.bootstrap4.min.css
+**/dataTables.bootstrap4.min.js
 **/jquery.dataTables.min.js
-**/jquery-3.4.1.min.js
+**/jquery-3.7.1.min.js
 **/fonts/**
 **/livy_python_api.egg-info/*
 **/*.txt

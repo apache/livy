@@ -33,13 +33,14 @@ class UIServlet(val basePath: String, livyConf: LivyConf) extends ScalatraServle
   private case class SimplePage(name: String) extends Page
 
   private case class AllSessionsPage(name: String = "Sessions") extends Page {
-    override def getNavCrumbs: Seq[Node] = <li class="active"><a href="#">Sessions</a></li>
+    override def getNavCrumbs: Seq[Node] =
+      <li class="nav-item"><a href="#" class="active nav-link">Sessions</a></li>
   }
   private case class SessionPage(id: Int) extends Page {
     val name: String = "Session " + id
     override def getNavCrumbs: Seq[Node] = {
-        <li><a href={basePath + "/ui"}>Sessions</a></li> ++
-          <li class="active"><a href="#">{name}</a></li>
+        <li class="nav-item"><a href={basePath + "/ui"} class="nav-link">Sessions</a></li> ++
+          <li class="nav-item"><a href="#" class="active nav-link">{name}</a></li>
     }
   }
   private case class LogPage(sessionType: String, id: Int) extends Page {
@@ -51,9 +52,9 @@ class UIServlet(val basePath: String, livyConf: LivyConf) extends ScalatraServle
       } else {
         "#"
       }
-      <li><a href={basePath + "/ui"}>Sessions</a></li> ++
-        <li><a href={sessionLink}>{sessionName}</a></li> ++
-        <li class="active"><a href="#">Log</a></li>
+      <li class="nav-item"><a href={basePath + "/ui"} class="nav-link">Sessions</a></li> ++
+        <li class="nav-item"><a href={sessionLink} class="nav-link">{sessionName}</a></li> ++
+        <li class="nav-item"><a href="#" class="active nav-link">Log</a></li>
     }
   }
 
@@ -63,13 +64,13 @@ class UIServlet(val basePath: String, livyConf: LivyConf) extends ScalatraServle
             href={basePath + "/static/css/bootstrap.min.css"}
             type="text/css"/>
       <link rel="stylesheet"
-            href={basePath + "/static/css/dataTables.bootstrap.min.css"}
+            href={basePath + "/static/css/dataTables.bootstrap4.min.css"}
             type="text/css"/>
       <link rel="stylesheet" href={basePath + "/static/css/livy-ui.css"} type="text/css"/>
-      <script src={basePath + "/static/js/jquery-3.4.1.min.js"}></script>
-      <script src={basePath + "/static/js/bootstrap.min.js"}></script>
+      <script src={basePath + "/static/js/jquery-3.7.1.min.js"}></script>
+      <script src={basePath + "/static/js/bootstrap.bundle.min.js"}></script>
       <script src={basePath + "/static/js/jquery.dataTables.min.js"}></script>
-      <script src={basePath + "/static/js/dataTables.bootstrap.min.js"}></script>
+      <script src={basePath + "/static/js/dataTables.bootstrap4.min.js"}></script>
       <script src={basePath + "/static/js/livy-ui.js"}></script>
       <script type="text/javascript">
         setBasePath({"'" + basePath + "'"});
@@ -78,19 +79,13 @@ class UIServlet(val basePath: String, livyConf: LivyConf) extends ScalatraServle
     </head>
 
   private def wrapNavCrumbs(crumbs: Seq[Node]): Seq[Node] =
-    <nav class="navbar navbar-default">
-      <div class="container-fluid">
-        <div class="navbar-header">
-          <a class="navbar-brand" href={basePath + "/ui"}>
-            <img alt="Livy" src={basePath + "/static/img/livy-mini-logo.png"}/>
-          </a>
-        </div>
-        <div class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            {crumbs}
-          </ul>
-        </div>
-      </div>
+    <nav class="navbar navbar-light bg-light navbar-expand">
+      <a class="navbar-brand" href={basePath + "/ui"}>
+        <img alt="Livy" src={basePath + "/static/img/livy-mini-logo.png"} />
+      </a>
+      <ul class="navbar-nav">
+        {crumbs}
+      </ul>
     </nav>
 
   private def createPage(pageInfo: Page, pageContents: Seq[Node]): Seq[Node] =
