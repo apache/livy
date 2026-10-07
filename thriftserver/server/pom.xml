@@ -116,9 +116,26 @@
       <version>2.25.1</version>
     </dependency>
 
+    <!--
+      Depend on the individual Jetty modules instead of the jetty-runner uber-jar.
+      jetty-runner bundles a shaded SLF4J 1.x (org.slf4j.*) that shadows
+      slf4j-api 2.x on the classpath and triggers the "Failed to load class
+      org.slf4j.impl.StaticLoggerBinder" / NOP warning. jetty-server and
+      jetty-servlet are directly used by ThriftHttpCLIService; jetty-webapp pins
+      Jetty webapp/xml to ${jetty.version}, overriding Hive's older Jetty
+      (LIVY-543). None of these bundle SLF4J.
+    -->
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-runner</artifactId>
+      <artifactId>jetty-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-servlet</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-webapp</artifactId>
       <version>${jetty.version}</version>
     </dependency>
 
@@ -140,6 +157,10 @@
         <exclusion>
           <groupId>org.apache.logging.log4j</groupId>
           <artifactId>log4j-slf4j-impl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j2-impl</artifactId>
         </exclusion>
         <exclusion>
           <groupId>log4j</groupId>
@@ -211,13 +232,6 @@
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
-            <configuration>
-              <excludeArtifactIds>
-                jetty-util,
-                jetty-xml,
-                jetty-webapp
-              </excludeArtifactIds>
-            </configuration>
           </execution>
         </executions>
       </plugin>
