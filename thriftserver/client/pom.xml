@@ -34,6 +34,7 @@
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-jdbc</artifactId>
       <version>${hive.version}</version>
+      <classifier>standalone</classifier>
       <exclusions>
         <exclusion>
           <groupId>org.apache.hbase</groupId>

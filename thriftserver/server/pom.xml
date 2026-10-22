@@ -139,7 +139,23 @@
       <artifactId>jetty-webapp</artifactId>
     </dependency>
 
-    <!-- needed for testing -->
+    <!--
+      Hive 4.x hive-jdbc is a thin jar (no Maven transitives). Do not use the standalone
+      classifier here: it relocates libthrift under org.apache.hive.org.apache.thrift and
+      conflicts with compile-scoped hive-service-rpc + libthrift on the IT classpath.
+    -->
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-common</artifactId>
+      <version>${hive.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-serde</artifactId>
+      <version>${hive.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-jdbc</artifactId>
@@ -228,6 +244,13 @@
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
+            <configuration>
+              <excludeArtifactIds>
+                jetty-util,
+                jetty-xml,
+                jetty-webapp
+              </excludeArtifactIds>
+            </configuration>
           </execution>
         </executions>
       </plugin>

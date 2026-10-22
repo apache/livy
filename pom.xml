@@ -83,7 +83,7 @@
     <slf4j.version>2.0.17</slf4j.version>
     <spark.version>4.1.2</spark.version>
     <kubernetes.client.version>6.8.1</kubernetes.client.version>
-    <hive.version>3.0.0</hive.version>
+    <hive.version>4.0.1</hive.version>
     <commons-codec.version>1.15</commons-codec.version>
     <commons-lang3.version>3.17.0</commons-lang3.version>
     <httpclient.version>4.5.14</httpclient.version>
@@ -94,7 +94,7 @@
     <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
     <jetty.version>9.4.58.v20250814</jetty.version>
     <junit.version>4.13.1</junit.version>
-    <libthrift.version>0.9.3</libthrift.version>
+    <libthrift.version>0.25.0</libthrift.version>
     <log4j.version>2.26.0</log4j.version>
     <kryo.version>4.0.2</kryo.version>
     <!-- Scalatra 2.8.x pulls in metrics-servlets 4.2.x; keeping metrics-core

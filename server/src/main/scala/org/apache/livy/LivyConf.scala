@@ -178,6 +178,18 @@ object LivyConf {
     Entry("livy.server.thrift.ssl.protocol.blacklist", "SSLv2,SSLv3")
   val THRIFT_USE_SSL = Entry("livy.server.thrift.use.SSL", false)
   val THRIFT_MAX_MESSAGE_SIZE = Entry("livy.server.thrift.max.message.size", 100 * 1024 * 1024)
+  /**
+   * Login timeout and exponential backoff for the binary Thrift server
+   * (`TThreadPoolServer`). Passed to `TThreadPoolServer.Args` in
+   * `ThriftBinaryCLIService` when the runtime libthrift version still
+   * exposes those setters.
+   *
+   * Livy ships libthrift 0.25.0, which is 0.16.0+. In that case these
+   * properties are read from configuration but have no effect (the setters
+   * were removed). They remain for compatibility with Hive-style
+   * config names and would apply only if an older libthrift were on the
+   * classpath at runtime.
+   */
   val THRIFT_LOGIN_TIMEOUT = Entry("livy.server.thrift.login.timeout", "20s")
   val THRIFT_LOGIN_BEBACKOFF_SLOT_LENGTH =
     Entry("livy.server.thrift.exponential.backoff.slot.length", "100ms")

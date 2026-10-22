@@ -322,7 +322,19 @@
           <version>${project.version}</version>
         </dependency>
 
-        <!-- needed for testing thriftserver -->
+        <!-- needed for testing thriftserver (Hive 4.x thin hive-jdbc) -->
+        <dependency>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>hive-common</artifactId>
+          <version>${hive.version}</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>hive-serde</artifactId>
+          <version>${hive.version}</version>
+          <scope>test</scope>
+        </dependency>
         <dependency>
           <groupId>org.apache.hive</groupId>
           <artifactId>hive-jdbc</artifactId>

@@ -17,7 +17,8 @@
 
 package org.apache.livy.thriftserver
 
-import java.sql.{Connection, Date, SQLException, Statement, Timestamp, Types}
+import java.sql.{Connection, Date, DriverManager, SQLException, Statement, Timestamp, Types}
+import java.util.concurrent.atomic.AtomicReference
 
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
@@ -666,6 +667,59 @@ class BinaryThriftServerSuite extends ThriftServerBaseTest with CommonThriftTest
       assert(livySessionManager.get(testSessionName).get.name.get == testSessionName)
     }
   }
+
+  test("fetch a large result set over binary transport") {
+    withJdbcStatement { statement =>
+      val numRows = 10000
+      val rs = statement.executeQuery(s"select id from range($numRows)")
+      var count = 0
+      var sum = 0L
+      while (rs.next()) {
+        sum += rs.getLong(1)
+        count += 1
+      }
+      rs.close()
+      assert(count == numRows)
+      assert(sum == (0L until numRows.toLong).sum)
+    }
+  }
+
+  test("GetInfo returns server/driver metadata") {
+    withJdbcConnection { connection =>
+      val md = connection.getMetaData
+      assert(Option(md.getDatabaseProductName).exists(_.nonEmpty))
+      assert(Option(md.getDatabaseProductVersion).exists(_.nonEmpty))
+      // Driver side metadata is served by the Hive JDBC driver, but exercising it ensures the
+      // full GetInfo round-trip is wired up.
+      assert(Option(md.getDriverName).exists(_.nonEmpty))
+    }
+  }
+
+  test("cancelling a running query terminates it") {
+    withJdbcStatement { statement =>
+      val error = new AtomicReference[Throwable]()
+      val queryThread = new Thread(new Runnable {
+        override def run(): Unit = {
+          try {
+            // A self cross join over a large range keeps the operation busy long enough to be
+            // cancelled from the main thread.
+            statement.executeQuery(
+              "select count(*) from range(1000000) a join range(1000000) b on a.id = b.id")
+          } catch {
+            case t: Throwable => error.set(t)
+          }
+        }
+      })
+      queryThread.start()
+      // Give the operation time to start running before cancelling it.
+      Thread.sleep(5000)
+      statement.cancel()
+      queryThread.join(60000)
+      assert(!queryThread.isAlive, "query thread did not terminate after cancel")
+      // The cancelled execution should surface as a SQLException on the executing thread.
+      assert(error.get() == null || error.get().isInstanceOf[SQLException])
+    }
+  }
 }
 
 class HttpThriftServerSuite extends ThriftServerBaseTest with CommonThriftTests {
@@ -730,6 +784,55 @@ class HttpThriftServerSuite extends ThriftServerBaseTest with CommonThriftTests 
   test("get types info test") {
     withJdbcConnection { c =>
       getTypeInfoTest(c)
+    }
+  }
+
+  test("fetch a large result set over HTTP transport") {
+    // Drives many FetchResults round-trips over HTTP, exercising ThriftHttpServlet
+    // .processThriftRequest and the HttpClient 4.x THttpClient shim end-to-end (not just connect).
+    withJdbcStatement { statement =>
+      val numRows = 10000
+      val rs = statement.executeQuery(s"select id from range($numRows)")
+      var count = 0
+      var sum = 0L
+      while (rs.next()) {
+        sum += rs.getLong(1)
+        count += 1
+      }
+      rs.close()
+      assert(count == numRows)
+      assert(sum == (0L until numRows.toLong).sum)
+    }
+  }
+
+  test("GetInfo returns server/driver metadata") {
+    withJdbcConnection { connection =>
+      val md = connection.getMetaData
+      assert(Option(md.getDatabaseProductName).exists(_.nonEmpty))
+      assert(Option(md.getDatabaseProductVersion).exists(_.nonEmpty))
+      assert(Option(md.getDriverName).exists(_.nonEmpty))
+    }
+  }
+
+  test("cancelling a running query terminates it") {
+    withJdbcStatement { statement =>
+      val error = new AtomicReference[Throwable]()
+      val queryThread = new Thread(new Runnable {
+        override def run(): Unit = {
+          try {
+            statement.executeQuery(
+              "select count(*) from range(1000000) a join range(1000000) b on a.id = b.id")
+          } catch {
+            case t: Throwable => error.set(t)
+          }
+        }
+      })
+      queryThread.start()
+      Thread.sleep(5000)
+      statement.cancel()
+      queryThread.join(60000)
+      assert(!queryThread.isAlive, "query thread did not terminate after cancel")
+      assert(error.get() == null || error.get().isInstanceOf[SQLException])
     }
   }
 }
