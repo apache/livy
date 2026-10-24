@@ -46,6 +46,15 @@ class SessionStore(
     store.set(sessionPath(sessionType, m.id), m)
   }
 
+  /**
+   * Persist a session to the session state store only if no session is already stored
+   * at that path.
+   * @return true if the session was persisted, false if a session with this id already exists.
+   */
+  def trySave(sessionType: String, m: RecoveryMetadata): Boolean = {
+    store.tryExclusiveCreate(sessionPath(sessionType, m.id), m)
+  }
+
   def saveNextSessionId(sessionType: String, id: Int): Unit = {
     store.set(sessionManagerPath(sessionType), SessionManagerState(id))
   }

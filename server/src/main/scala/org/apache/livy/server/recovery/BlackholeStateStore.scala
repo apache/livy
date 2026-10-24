@@ -28,6 +28,9 @@ import org.apache.livy.LivyConf
 class BlackholeStateStore(livyConf: LivyConf) extends StateStore(livyConf) {
   def set(key: String, value: Object): Unit = {}
 
+  // Recovery is disabled, so there's no persisted state to conflict with.
+  def tryExclusiveCreate(key: String, value: Object): Boolean = true
+
   def get[T: ClassTag](key: String): Option[T] = None
 
   def getChildren(key: String): Seq[String] = List.empty[String]

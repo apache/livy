@@ -45,6 +45,27 @@ class SessionStoreSpec extends AnyFunSpec with LivyBaseUnitTestSuite {
       verify(stateStore).set(s"$sessionPath/99", m)
     }
 
+    it("should exclusively create session state when trying to save a session") {
+      val stateStore = mock[StateStore]
+      val sessionStore = new SessionStore(conf, stateStore)
+
+      val m = TestRecoveryMetadata(99)
+      when(stateStore.tryExclusiveCreate(s"$sessionPath/99", m)).thenReturn(true)
+
+      sessionStore.trySave(sessionType, m) shouldBe true
+      verify(stateStore).tryExclusiveCreate(s"$sessionPath/99", m)
+    }
+
+    it("should return false from trySave if the session already exists") {
+      val stateStore = mock[StateStore]
+      val sessionStore = new SessionStore(conf, stateStore)
+
+      val m = TestRecoveryMetadata(99)
+      when(stateStore.tryExclusiveCreate(s"$sessionPath/99", m)).thenReturn(false)
+
+      sessionStore.trySave(sessionType, m) shouldBe false
+    }
+
     it("should return existing sessions") {
       val validMetadata = Map(
         "0" -> Some(TestRecoveryMetadata(0)),
