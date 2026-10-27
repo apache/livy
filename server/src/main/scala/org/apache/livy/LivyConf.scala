@@ -375,6 +375,8 @@ object LivyConf {
   val SESSION_TIMEOUT_CHECK_SKIP_BUSY = Entry("livy.server.session.timeout-check.skip-busy", false)
   // How long will an inactive session be gc-ed.
   val SESSION_TIMEOUT = Entry("livy.server.session.timeout", "1h")
+  // Wait interval between inactive sessions while being gc-ed
+  val GC_WAIT_INTERVAL_TIMEOUT = Entry("livy.server.gc.interval.timeout", "60s")
   // How long a finished session state will be kept in memory
   val SESSION_STATE_RETAIN_TIME = Entry("livy.server.session.state-retain.sec", "600s")
   // Max creating session in livyServer

@@ -277,7 +277,7 @@ class SessionManager[S <: Session, R <: RecoveryMetadata : ClassTag](
     override def run(): Unit = {
       while (true) {
         collectGarbage()
-        Thread.sleep(60 * 1000)
+        Thread.sleep(livyConf.getTimeAsMs(LivyConf.GC_WAIT_INTERVAL_TIMEOUT))
       }
     }
 

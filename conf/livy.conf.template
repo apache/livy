@@ -71,7 +71,10 @@
 # Time in milliseconds on how long Livy will wait before timing out an inactive session.
 # Note that the inactive session could be busy running jobs.
 # livy.server.session.timeout = 1h
-#
+
+# Wait interval between inactive sessions while being gc-ed
+# livy.server.gc.interval.timeout = 60s
+
 # How long a finished session state should be kept in LivyServer for query.
 # livy.server.session.state-retain.sec = 600s
 
