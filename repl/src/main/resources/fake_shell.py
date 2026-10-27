@@ -31,6 +31,7 @@ import threading
 import tempfile
 import shutil
 import pickle
+import subprocess
 
 if sys.version_info > (3,8):
     from ast import Module
@@ -200,6 +201,22 @@ class ExecutionError(Exception):
 class NormalNode(object):
     def __init__(self, code):
         self.code = compile(code, '<stdin>', 'exec', ast.PyCF_ONLY_AST, 1)
+
+        # Redefine os.system() in the shell to make sure the output
+        # is properly redirected
+        def os_system_override(x):
+            # Use Popen for compatibility with both Python 2 and 3
+            process = subprocess.Popen(x, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            stdout, stderr = process.communicate()
+            # Decode output based on Python version
+            output = stdout.decode('UTF-8')
+            # Print standard output
+            print(output, end='')
+            # Return exit code
+            return process.returncode
+
+        # Override os.system with the new function
+        os.system = os_system_override
 
     def execute(self):
         to_run_exec, to_run_single = self.code.body[:-1], self.code.body[-1:]

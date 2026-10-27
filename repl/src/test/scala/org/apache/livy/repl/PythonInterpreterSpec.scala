@@ -196,6 +196,57 @@ abstract class PythonBaseInterpreterSpec extends BaseInterpreterSpec {
     ))
   }
 
+  it should "capture stdout with os system commands" in withInterpreter { interpreter =>
+    val response = interpreter.execute(
+      """import os
+        |os.system("echo Hello World!")
+             """.stripMargin)
+
+    response should equal(Interpreter.ExecuteSuccess(
+      TEXT_PLAIN -> "Hello World!\n0"
+    ))
+  }
+
+  it should "capture stdout with os system commands using condition" in withInterpreter {
+    interpreter =>
+      val response = interpreter.execute(
+        """import os
+          |if 5==5:
+          | os.system("echo one")
+          |else:
+          | os.system("echo two")
+             """.stripMargin)
+
+      response should equal(Interpreter.ExecuteSuccess(
+        TEXT_PLAIN -> "one\n0"
+      ))
+  }
+
+  it should "capture stdout with multiple os system commands" in withInterpreter { interpreter =>
+    val response = interpreter.execute(
+      """import os
+        |os.system("echo one")
+        |os.system("echo two")
+             """.stripMargin)
+
+    response should equal(Interpreter.ExecuteSuccess(
+      TEXT_PLAIN -> "one\ntwo\n0"
+    ))
+  }
+
+  it should "capture stdout and stderr on os system commands" in withInterpreter { interpreter =>
+    val response = interpreter.execute(
+      """import os
+        |os.system("echo one")
+        |os.system("echo two >&2")
+        |os.system("echo three")
+             """.stripMargin)
+
+    response should equal(Interpreter.ExecuteSuccess(
+      TEXT_PLAIN -> "one\ntwo\nthree\n0"
+    ))
+  }
+
   it should "report an error if accessing an unknown variable" in withInterpreter { interpreter =>
     val response = interpreter.execute("x")
     response should equal(Interpreter.ExecuteError(
