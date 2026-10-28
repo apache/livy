@@ -346,7 +346,7 @@ class ThriftHttpServlet(
 
 object ThriftHttpServlet extends Logging {
   private val XSRF_HEADER_DEFAULT = "X-XSRF-HEADER"
-  private val XSRF_METHODS_TO_IGNORE_DEFAULT = Set("GET", "OPTIONS", "HEAD", "TRACE")
+  private val XSRF_METHODS_TO_IGNORE_DEFAULT = Set("GET", "OPTIONS", "HEAD")
   val AUTH_COOKIE = "hive.server2.auth"
   val RAN: SecureRandom = new SecureRandom()
   val HIVE_DELEGATION_TOKEN_HEADER: String = "X-Hive-Delegation-Token"

@@ -274,6 +274,10 @@ class LivyServer extends Logging {
 
       })
 
+    info("Disabling HTTP TRACE/TRACK methods.")
+    val traceTrackHolder = new FilterHolder(new HttpTraceTrackFilter())
+    server.context.addFilter(traceTrackHolder, "/*", EnumSet.allOf(classOf[DispatcherType]))
+
     if (livyConf.getBoolean(SECURITY_HEADERS_ENABLED)) {
       info("Adding security headers is enabled.")
       val securityHeadersHolder = new FilterHolder(new SecurityHeadersFilter(livyConf))

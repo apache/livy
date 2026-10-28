@@ -17,8 +17,10 @@
 
 package org.apache.livy.thriftserver.cli
 
+import java.util.EnumSet
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.TimeUnit
+import javax.servlet.DispatcherType
 import javax.ws.rs.HttpMethod
 
 import org.apache.hive.service.rpc.thrift.TCLIService
@@ -29,12 +31,12 @@ import org.eclipse.jetty.server.HttpConnectionFactory
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.server.handler.gzip.GzipHandler
-import org.eclipse.jetty.servlet.ServletContextHandler
-import org.eclipse.jetty.servlet.ServletHolder
+import org.eclipse.jetty.servlet.{FilterHolder, ServletContextHandler, ServletHolder}
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.ExecutorThreadPool
 
 import org.apache.livy.LivyConf
+import org.apache.livy.server.HttpTraceTrackFilter
 import org.apache.livy.thriftserver.LivyCLIService
 import org.apache.livy.thriftserver.auth.AuthFactory
 
@@ -128,6 +130,8 @@ class ThriftHttpCLIService(
       // Context handler
       val context = new ServletContextHandler(ServletContextHandler.SESSIONS)
       context.setContextPath("/")
+      val traceTrackHolder = new FilterHolder(new HttpTraceTrackFilter())
+      context.addFilter(traceTrackHolder, "/*", EnumSet.allOf(classOf[DispatcherType]))
       if (livyConf.getBoolean(LivyConf.THRIFT_XSRF_FILTER_ENABLED)) {
         // Filtering does not work here currently, doing filter in ThriftHttpServlet
         debug("XSRF filter enabled")
