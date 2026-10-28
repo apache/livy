@@ -31,7 +31,7 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.{Random, Try}
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import org.apache.hadoop.fs.Path
+import org.apache.hadoop.fs.{GlobPattern, Path}
 import org.apache.spark.launcher.SparkLauncher
 
 import org.apache.livy._
@@ -80,6 +80,12 @@ object InteractiveSession extends Logging {
   private[interactive] val SPARK_YARN_IS_PYTHON = "spark.yarn.isPython"
 
   val RECOVERY_SESSION_TYPE = "interactive"
+
+  // Wildcard jar paths (e.g. "local:/opt/livy/rsc-jars/*") are forwarded unchanged to
+  // spark.jars so Spark resolves them like spark.yarn.jars (see DependencyUtils.resolveGlobPath).
+  private[interactive] def isGlobPath(path: String): Boolean = {
+    new GlobPattern(path).hasWildcard()
+  }
 
   private[interactive] def defaultSparkAppName(sessionId: Int, livyConf: LivyConf): String = {
     val prefix = Option(livyConf.get(LivyConf.SERVER_APP_NAME_PREFIX)).filter(_.nonEmpty)
@@ -219,11 +225,16 @@ object InteractiveSession extends Logging {
     def livyJars(livyConf: LivyConf, scalaVersion: String): List[String] = {
       Option(livyConf.get(LivyConf.REPL_JARS)).map { jars =>
         val regex = """[\w-]+_(\d\.\d\d).*\.jar""".r
-        jars.split(",").filter { name => new Path(name).getName match {
-            // Filter out unmatched scala jars
-            case regex(ver) => ver == scalaVersion
-            // Keep all the java jars end with ".jar"
-            case _ => name.endsWith(".jar")
+        jars.split(",").map(_.trim).filter(_.nonEmpty).filter { name =>
+          if (isGlobPath(name)) {
+            true
+          } else {
+            new Path(name).getName match {
+              // Filter out unmatched scala jars
+              case regex(ver) => ver == scalaVersion
+              // Keep all the java jars end with ".jar"
+              case _ => name.endsWith(".jar")
+            }
           }
         }.toList
       }.getOrElse {
@@ -387,7 +398,8 @@ object InteractiveSession extends Logging {
 
     builderProperties.put(RSCConf.Entry.SESSION_KIND.key, kind.toString)
 
-    // Set Livy.rsc.jars from livy conf to rsc conf, RSC conf will take precedence if both are set.
+    // Set livy.rsc.jars from livy conf to rsc conf, RSC conf will take precedence if both are set.
+    // Glob paths are passed through unchanged; ContextLauncher merges them into spark.jars.
     Option(livyConf.get(LivyConf.RSC_JARS)).foreach(
       builderProperties.getOrElseUpdate(RSCConf.Entry.LIVY_JARS.key(), _))
 

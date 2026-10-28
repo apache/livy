@@ -163,6 +163,44 @@ class InteractiveSessionSpec extends AnyFunSpec
       properties1(RSCConf.Entry.LIVY_JARS.key()).split(",").toSet === rscJars1
     }
 
+    it("should pass through glob paths in livy.repl.jars") {
+      val globPath = "local:/opt/livy/repl_2.12-jars/*"
+
+      val livyConf = new LivyConf(false)
+        .set(LivyConf.REPL_JARS, globPath)
+        .set(LivyConf.LIVY_SPARK_VERSION, sys.env("LIVY_SPARK_VERSION"))
+        .set(LivyConf.LIVY_SPARK_SCALA_VERSION, "2.12")
+      val properties = InteractiveSession.prepareBuilderProp(Map.empty, Spark, livyConf)
+      properties(LivyConf.SPARK_JARS) shouldBe globPath
+    }
+
+    it("should keep glob paths and Scala-matched jars in livy.repl.jars") {
+      val globPath = "local:/opt/livy/repl_2.12-jars/*"
+
+      val livyConf = new LivyConf(false)
+        .set(LivyConf.REPL_JARS,
+          s"$globPath,livy-repl_2.11-0.7.jar,livy-repl_2.12-0.7.jar,commons-codec-1.15.jar")
+        .set(LivyConf.LIVY_SPARK_VERSION, sys.env("LIVY_SPARK_VERSION"))
+        .set(LivyConf.LIVY_SPARK_SCALA_VERSION, "2.12")
+      val properties = InteractiveSession.prepareBuilderProp(Map.empty, Spark, livyConf)
+      properties(LivyConf.SPARK_JARS).split(",").toSet shouldBe Set(
+        globPath,
+        "livy-repl_2.12-0.7.jar",
+        "commons-codec-1.15.jar")
+    }
+
+    it("should pass through glob paths in livy.rsc.jars") {
+      val globPath = "local:/opt/livy/rsc-jars/*"
+
+      val livyConf = new LivyConf(false)
+        .set(LivyConf.REPL_JARS, "dummy.jar")
+        .set(LivyConf.RSC_JARS, globPath)
+        .set(LivyConf.LIVY_SPARK_VERSION, sys.env("LIVY_SPARK_VERSION"))
+        .set(LivyConf.LIVY_SPARK_SCALA_VERSION, sys.env("LIVY_SCALA_VERSION"))
+      val properties = InteractiveSession.prepareBuilderProp(Map.empty, Spark, livyConf)
+      properties(RSCConf.Entry.LIVY_JARS.key()) shouldBe globPath
+    }
+
     it("should update appId and appInfo and session store") {
       val mockApp = mock[SparkApp]
       val sessionStore = mock[SessionStore]

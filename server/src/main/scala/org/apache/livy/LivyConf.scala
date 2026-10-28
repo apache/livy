@@ -274,9 +274,9 @@ object LivyConf {
   // Days to keep Livy server request logs.
   val REQUEST_LOG_RETAIN_DAYS = Entry("livy.server.request-log-retain.days", 5)
 
-  // REPL related jars separated with comma.
+  // Comma-separated REPL jars merged into spark.jars. Globs are allowed, like spark.yarn.jars.
   val REPL_JARS = Entry("livy.repl.jars", null)
-  // RSC related jars separated with comma.
+  // Comma-separated RSC jars merged into spark.jars. Globs are allowed, like spark.yarn.jars.
   val RSC_JARS = Entry("livy.rsc.jars", null)
 
   // How long to check livy session leakage

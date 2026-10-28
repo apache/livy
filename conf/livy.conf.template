@@ -91,7 +91,10 @@
 # Comma-separated list of Livy RSC jars. By default Livy will upload jars from its installation
 # directory every time a session is started. By caching these files in HDFS, for example, startup
 # time of sessions on YARN can be reduced.
-# livy.rsc.jars =
+# Glob wildcards are supported the same way as spark.yarn.jars and are forwarded to spark.jars
+# unchanged (Spark resolves them). With local: URIs the jars are read from each cluster node's
+# local filesystem and are not uploaded to remote storage. Example:
+# livy.rsc.jars = local:/opt/livy/rsc-jars/*
 
 # If true, the RSC driver's address is resolved from the hostname reported by the driver
 # instead of the socket's IP. Useful for Kubernetes + service-mesh (Istio) deployments where
@@ -103,7 +106,10 @@
 # time of sessions on YARN can be reduced. Please list all the repl dependencies including
 # Scala version-specific livy-repl jars, Livy will automatically pick the right dependencies
 # during session creation.
-# livy.repl.jars =
+# Glob wildcards are supported the same way as spark.yarn.jars and are forwarded to spark.jars
+# unchanged (Spark resolves them). Scala version-specific filtering is only applied to explicitly
+# listed jars, not to glob paths, so point a glob at a Scala-version-specific directory. Example:
+# livy.repl.jars = local:/opt/livy/repl_2.12-jars/*
 
 # Location of PySpark archives. By default Livy will upload the file from SPARK_HOME, but
 # by caching the file in HDFS, startup time of PySpark sessions on YARN can be reduced.
