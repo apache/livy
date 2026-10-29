@@ -178,6 +178,7 @@ object LivyConf {
     Entry("livy.server.thrift.ssl.protocol.blacklist", "SSLv2,SSLv3")
   val THRIFT_USE_SSL = Entry("livy.server.thrift.use.SSL", false)
   val THRIFT_MAX_MESSAGE_SIZE = Entry("livy.server.thrift.max.message.size", 100 * 1024 * 1024)
+  // Deprecated: ignored since libthrift 0.16, which removed these TThreadPoolServer options.
   val THRIFT_LOGIN_TIMEOUT = Entry("livy.server.thrift.login.timeout", "20s")
   val THRIFT_LOGIN_BEBACKOFF_SLOT_LENGTH =
     Entry("livy.server.thrift.exponential.backoff.slot.length", "100ms")
@@ -449,9 +450,14 @@ object LivyConf {
       DepConf("livy.server.yarn.app-leakage.check_interval", "0.4")
   )
 
+  private val THRIFT_IGNORED_OPTION_MESSAGE = "It has no effect since libthrift 0.16: when all " +
+    "Thrift worker threads are busy, new connections are rejected instead of being retried."
+
   private val deprecatedConfigs: Map[String, DeprecatedConf] = {
     val configs: Seq[DepConf] = Seq(
-      DepConf("livy.server.access_control.users", "0.4")
+      DepConf("livy.server.access_control.users", "0.4"),
+      DepConf(THRIFT_LOGIN_TIMEOUT.key, "1.0", THRIFT_IGNORED_OPTION_MESSAGE),
+      DepConf(THRIFT_LOGIN_BEBACKOFF_SLOT_LENGTH.key, "1.0", THRIFT_IGNORED_OPTION_MESSAGE)
     )
 
     Map(configs.map { cfg => (cfg.key -> cfg) }: _*)

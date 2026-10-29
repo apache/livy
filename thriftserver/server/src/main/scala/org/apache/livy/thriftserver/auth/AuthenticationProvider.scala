@@ -28,6 +28,18 @@ object AuthenticationProvider {
   // TODO: support PAM
   val AUTH_METHODS = Seq("NONE", "CUSTOM", "LDAP")
 
+  /**
+   * Returns the canonical name of the given authentication method. Hive's
+   * `AuthenticationProviderFactory.AuthMethods` cannot be used for this: since Hive 4 its
+   * constructor instantiates `HiveConf`, and hive-common is not on Livy's runtime classpath.
+   */
+  @throws[AuthenticationException]
+  def getValidAuthMethod(method: String): String = {
+    AUTH_METHODS.find(_.equalsIgnoreCase(method)).getOrElse {
+      throw new AuthenticationException("Not a valid authentication method")
+    }
+  }
+
   @throws[AuthenticationException]
   def getAuthenticationProvider(method: String, conf: LivyConf): PasswdAuthenticationProvider = {
     method match {

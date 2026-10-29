@@ -110,11 +110,9 @@ class ThriftBinaryCLIService(override val cliService: LivyCLIService, val oomHoo
           new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
         .executorService(executorService)
       // `requestTimeout`, `requestTimeoutUnit`, `beBackoffSlotLength` and
-      // `beBackoffSlotLengthUnit` are present in the libthrift that Livy
-      // compiles against (0.9.3, pinned in the root pom) and in the versions
-      // Spark 3 brings in transitively, but were removed in libthrift 0.16.0
-      // (transitively pulled in by Spark 4). Invoke them reflectively so the
-      // same code compiles and runs on both classpaths.
+      // `beBackoffSlotLengthUnit` were removed in libthrift 0.16.0. Invoke them
+      // reflectively so the same binary still runs if an older libthrift is on
+      // the runtime classpath (e.g. Spark 3 transitive versions).
       applyOptionalArg(sargs, "requestTimeout", Integer.TYPE, Int.box(requestTimeout))
       applyOptionalArg(sargs, "requestTimeoutUnit", classOf[TimeUnit], TimeUnit.MILLISECONDS)
       applyOptionalArg(sargs, "beBackoffSlotLength", Integer.TYPE, Int.box(beBackoffSlotLength))
@@ -184,9 +182,8 @@ class ThriftBinaryCLIService(override val cliService: LivyCLIService, val oomHoo
   /**
    * Invoke a `TThreadPoolServer.Args` builder method by name if it exists on
    * the runtime libthrift version. Silently skip it if the method is missing:
-   * libthrift 0.16.0 (pulled in by the Spark 4 profile via spark-hive)
-   * dropped the login-timeout / backoff-slot builders that pre-0.16 releases
-   * -- including Livy's pinned 0.9.3 compile dependency -- still expose.
+   * libthrift 0.16.0+ dropped the login-timeout / backoff-slot builders that
+   * older releases still expose.
    */
   private def applyOptionalArg(
       args: TThreadPoolServer.Args,

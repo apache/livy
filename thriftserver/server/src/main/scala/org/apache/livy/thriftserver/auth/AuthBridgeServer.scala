@@ -215,7 +215,7 @@ sealed class TUGIAssumingProcessor(
     var useProxy: Boolean) extends TProcessor with Logging {
 
   @throws[TException]
-  override def process(inProt: TProtocol, outProt: TProtocol): Boolean = {
+  override def process(inProt: TProtocol, outProt: TProtocol): Unit = {
     val trans = inProt.getTransport
     if (!trans.isInstanceOf[TSaslServerTransport]) {
       throw new TException(s"Unexpected non-SASL transport ${trans.getClass}")
@@ -231,7 +231,8 @@ sealed class TUGIAssumingProcessor(
     AuthBridgeServer.userAuthMechanism.set(mechanismName)
     if (AuthMethod.PLAIN.getMechanismName.equalsIgnoreCase(mechanismName)) {
       AuthBridgeServer.remoteUser.set(endUser)
-      return wrapped.process(inProt, outProt)
+      wrapped.process(inProt, outProt)
+      return
     }
     AuthBridgeServer.authenticationMethod.set(UserGroupInformation.AuthenticationMethod.KERBEROS)
     if (AuthMethod.TOKEN.getMechanismName.equalsIgnoreCase(mechanismName)) {
@@ -250,8 +251,8 @@ sealed class TUGIAssumingProcessor(
           endUser, UserGroupInformation.getLoginUser)
         AuthBridgeServer.remoteUser.set(clientUgi.getShortUserName)
         debug(s"Set remoteUser : ${AuthBridgeServer.remoteUser.get}")
-        clientUgi.doAs(new PrivilegedExceptionAction[Boolean]() {
-          override def run: Boolean = try {
+        clientUgi.doAs(new PrivilegedExceptionAction[Unit]() {
+          override def run(): Unit = try {
             wrapped.process(inProt, outProt)
           } catch {
             case te: TException => throw new RuntimeException(te)

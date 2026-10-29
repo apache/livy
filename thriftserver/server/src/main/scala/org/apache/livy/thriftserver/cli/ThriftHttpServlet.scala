@@ -20,7 +20,7 @@ package org.apache.livy.thriftserver.cli
 import java.io.IOException
 import java.security.{PrivilegedExceptionAction, SecureRandom}
 import javax.servlet.ServletException
-import javax.servlet.http.{Cookie, HttpServletRequest, HttpServletResponse}
+import javax.servlet.http.{Cookie, HttpServlet, HttpServletRequest, HttpServletResponse}
 import javax.ws.rs.core.NewCookie
 
 import scala.collection.JavaConverters._
@@ -32,9 +32,9 @@ import org.apache.hive.service.CookieSigner
 import org.apache.hive.service.auth.{HiveAuthConstants, HttpAuthenticationException, HttpAuthUtils}
 import org.apache.hive.service.auth.HiveAuthConstants.AuthTypes
 import org.apache.hive.service.cli.HiveSQLException
-import org.apache.thrift.TProcessor
-import org.apache.thrift.protocol.TProtocolFactory
-import org.apache.thrift.server.TServlet
+import org.apache.thrift.{TException, TProcessor}
+import org.apache.thrift.protocol.{TProtocol, TProtocolFactory}
+import org.apache.thrift.transport.TIOStreamTransport
 import org.ietf.jgss.{GSSContext, GSSCredential, GSSException, GSSManager, Oid}
 
 import org.apache.livy.{LivyConf, Logging}
@@ -51,7 +51,10 @@ class ThriftHttpServlet(
     val serviceUGI: UserGroupInformation,
     val httpUGI: UserGroupInformation,
     val authFactory: AuthFactory,
-    val livyConf: LivyConf) extends TServlet(processor, protocolFactory) with Logging {
+    val livyConf: LivyConf) extends HttpServlet with Logging {
+
+  private val thriftProcessor: TProcessor = processor
+  private val thriftProtocolFactory: TProtocolFactory = protocolFactory
 
   private val isCookieAuthEnabled = livyConf.getBoolean(LivyConf.THRIFT_HTTP_COOKIE_AUTH_ENABLED)
 
@@ -152,7 +155,7 @@ class ThriftHttpServlet(
         }
         info("Cookie added for clientUserName " + clientUserName)
       }
-      super.doPost(request, response);
+      processThriftRequest(request, response)
     } catch {
       case e: HttpAuthenticationException =>
         error("Error: ", e)
@@ -170,6 +173,27 @@ class ThriftHttpServlet(
       SessionInfo.clearIpAddress()
       SessionInfo.clearProxyUserName()
       SessionInfo.clearForwardedAddresses()
+    }
+  }
+
+  /**
+   * Run the Thrift RPC over HTTP (same behavior as libthrift's TServlet, but on
+   * javax.servlet so it works with Jetty 9.x; libthrift 0.16+ TServlet uses jakarta.servlet).
+   */
+  @throws[IOException]
+  @throws[ServletException]
+  private def processThriftRequest(
+      request: HttpServletRequest,
+      response: HttpServletResponse): Unit = {
+    try {
+      response.setContentType("application/x-thrift")
+      val transport = new TIOStreamTransport(request.getInputStream, response.getOutputStream)
+      val inProtocol: TProtocol = thriftProtocolFactory.getProtocol(transport)
+      val outProtocol: TProtocol = thriftProtocolFactory.getProtocol(transport)
+      thriftProcessor.process(inProtocol, outProtocol)
+      response.getOutputStream.flush()
+    } catch {
+      case te: TException => throw new ServletException(te)
     }
   }
 

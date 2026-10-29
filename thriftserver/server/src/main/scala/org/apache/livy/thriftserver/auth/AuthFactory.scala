@@ -27,7 +27,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHENTICATION
 import org.apache.hadoop.security.SaslRpcServer.AuthMethod
 import org.apache.hive.service.auth.{SaslQOP, TSetIpAddressProcessor}
-import org.apache.hive.service.auth.AuthenticationProviderFactory.AuthMethods
 import org.apache.hive.service.auth.HiveAuthConstants.AuthTypes
 import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift.TCLIService
@@ -174,7 +173,7 @@ class CLIServiceProcessorFactory(val service: Iface, val saslServer: AuthBridgeS
 class PlainServerCallbackHandler(authMethodStr: String, livyConf: LivyConf)
   extends CallbackHandler {
 
-  private val authMethod: AuthMethods = AuthMethods.getValidAuthMethod(authMethodStr)
+  private val authMethod: String = AuthenticationProvider.getValidAuthMethod(authMethodStr)
 
   override def handle(callbacks: Array[Callback]): Unit = {
     var username: String = null
@@ -188,7 +187,7 @@ class PlainServerCallbackHandler(authMethodStr: String, livyConf: LivyConf)
       case other => throw new UnsupportedCallbackException(other)
     }
     val provider =
-      AuthenticationProvider.getAuthenticationProvider(authMethod.getAuthMethod, livyConf)
+      AuthenticationProvider.getAuthenticationProvider(authMethod, livyConf)
     provider.Authenticate(username, password)
     if (ac != null) {
       ac.setAuthorized(true)

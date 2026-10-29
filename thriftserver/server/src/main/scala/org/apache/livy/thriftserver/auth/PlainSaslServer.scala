@@ -28,7 +28,6 @@ import javax.security.auth.callback.UnsupportedCallbackException
 import javax.security.auth.login.LoginException
 import javax.security.sasl._
 
-import org.apache.hive.service.auth.AuthenticationProviderFactory.AuthMethods
 import org.apache.thrift.transport.TSaslServerTransport
 
 import org.apache.livy.LivyConf
@@ -42,7 +41,7 @@ class PlainSaslServer private[auth] (
     val handler: CallbackHandler,
     val authMethodStr: String) extends SaslServer {
 
-  AuthMethods.getValidAuthMethod(authMethodStr)
+  AuthenticationProvider.getValidAuthMethod(authMethodStr)
 
   private var user: String = null
   override def getMechanismName: String = PlainSaslServer.PLAIN_METHOD

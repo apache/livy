@@ -34,6 +34,7 @@
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-jdbc</artifactId>
       <version>${hive.version}</version>
+      <classifier>standalone</classifier>
       <exclusions>
         <exclusion>
           <groupId>org.apache.hbase</groupId>
@@ -69,6 +70,51 @@
         <exclusion>
           <groupId>org.apache.logging.log4j</groupId>
           <artifactId>log4j-slf4j-impl</artifactId>
+        </exclusion>
+        <!--
+          hive-jdbc:standalone above already contains org.apache.hive.jdbc.*. hive-beeline also
+          depends on the thin hive-jdbc jar, so both copies would be on dev/beeline's classpath.
+          It also depends on libthrift, which Hive 4.0.1 manages at 0.16.0. An exclusion here
+          covers that whole subtree (including libthrift reached through hive-common). BeeLine
+          itself references org.apache.thrift.transport.TTransportException, so libthrift 0.25.0
+          is declared directly below instead of keeping Hive's 0.16.0.
+        -->
+        <exclusion>
+          <groupId>org.apache.hive</groupId>
+          <artifactId>hive-jdbc</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.thrift</groupId>
+          <artifactId>libthrift</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!--
+      Satisfies BeeLine's TTransportException reference after libthrift is excluded from
+      hive-beeline. httpclient5, httpcore5, jakarta.servlet-api and jakarta.annotation-api are
+      only used by libthrift's THttpClient and TServlet; the standalone JDBC jar carries its own
+      shaded transport.
+    -->
+    <dependency>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libthrift</artifactId>
+      <version>${libthrift.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.client5</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.core5</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>jakarta.servlet</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>jakarta.annotation</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

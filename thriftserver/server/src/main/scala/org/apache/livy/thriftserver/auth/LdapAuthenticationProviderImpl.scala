@@ -18,7 +18,7 @@ package org.apache.livy.thriftserver.auth
 
 import javax.security.sasl.AuthenticationException
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.auth.PasswdAuthenticationProvider
 
 import org.apache.livy.thriftserver.auth.ldap._
@@ -30,7 +30,7 @@ class LdapAuthenticationProviderImpl(val conf: LivyConf) extends PasswdAuthentic
   private val searchFactory: DirSearchFactory = new LdapSearchFactory()
 
   @throws[AuthenticationException]
-  def Authenticate(user: String, password: String): Unit = {
+  override def Authenticate(user: String, password: String): Unit = {
     createDirSearch(user, password)
     applyFilter(user)
   }

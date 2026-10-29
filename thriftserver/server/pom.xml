@@ -62,6 +62,38 @@
           <groupId>org.apache.curator</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <!--
+          Hive 4 dependencies for SAML/JWT auth, PAM and the HS2 web UI. Livy supports none of
+          these, and no class reachable from Livy's code references them.
+        -->
+        <exclusion>
+          <groupId>org.pac4j</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.nimbusds</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.santuario</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.springframework</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.sf.jpam</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jamon</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
@@ -106,9 +138,36 @@
       <artifactId>slf4j-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
       <version>${libthrift.version}</version>
+      <!--
+        httpclient5, httpcore5, jakarta.servlet-api and jakarta.annotation-api are only used by
+        libthrift's THttpClient and TServlet. Livy uses neither: its HTTP server is
+        ThriftHttpServlet on javax.servlet.
+      -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.client5</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.core5</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>jakarta.servlet</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>jakarta.annotation</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
@@ -121,10 +180,9 @@
       jetty-runner bundles a shaded SLF4J 1.x (org.slf4j.*) that shadows
       slf4j-api 2.x on the classpath and triggers the "Failed to load class
       org.slf4j.impl.StaticLoggerBinder" / NOP warning. jetty-server and
-      jetty-servlet are directly used by ThriftHttpCLIService; jetty-webapp
-      overrides Hive's older Jetty (LIVY-543). All Jetty versions are managed in
-      the root pom so these jars match the ones shipped by livy-server.
-      None of these bundle SLF4J.
+      jetty-servlet are directly used by ThriftHttpCLIService. All Jetty versions
+      are managed in the root pom so these jars match the ones shipped by
+      livy-server. None of these bundle SLF4J.
     -->
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
@@ -134,12 +192,36 @@
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-servlet</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-webapp</artifactId>
-    </dependency>
 
-    <!-- needed for testing -->
+    <!--
+      Hive 4.x hive-jdbc is a thin jar (no Maven transitives). Do not use the standalone
+      classifier here: it relocates libthrift under org.apache.hive.org.apache.thrift and
+      conflicts with compile-scoped hive-service-rpc + libthrift on the IT classpath.
+    -->
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-common</artifactId>
+      <version>${hive.version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j-impl</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-serde</artifactId>
+      <version>${hive.version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j-impl</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-jdbc</artifactId>

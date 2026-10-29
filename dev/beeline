@@ -45,4 +45,12 @@ if [ ! -d "$LIBDIR" ]; then
   exit 1
 fi
 
-exec $RUNNER $BEELINE_JAVA_OPTS -cp $LIBDIR/*:$LIVY_CONF_DIR:$CLASSPATH $CLASS "$@"
+# The standalone JDBC jar must come first: hive-common, pulled in by hive-beeline, contains
+# unshaded copies of classes (e.g. HiveAuthUtils) that the standalone driver bundles relocated.
+BEELINE_CLASSPATH="$LIBDIR/*:$LIVY_CONF_DIR:$CLASSPATH"
+STANDALONE_JDBC=$(ls "$LIBDIR"/hive-jdbc-*-standalone.jar 2>/dev/null | head -n 1)
+if [ -n "$STANDALONE_JDBC" ]; then
+  BEELINE_CLASSPATH="$STANDALONE_JDBC:$BEELINE_CLASSPATH"
+fi
+
+exec $RUNNER $BEELINE_JAVA_OPTS -cp "$BEELINE_CLASSPATH" $CLASS "$@"

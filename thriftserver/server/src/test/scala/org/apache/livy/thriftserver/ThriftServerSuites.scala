@@ -20,11 +20,17 @@ package org.apache.livy.thriftserver
 import java.sql.{Connection, Date, SQLException, Statement, Timestamp, Types}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.io.Source
+import scala.util.Try
 
 import org.apache.hive.jdbc.HiveStatement
+import org.apache.hive.service.cli.OperationState
+import org.scalatest.concurrent.Eventually._
 
 import org.apache.livy.LivyConf
+import org.apache.livy.thriftserver.operation.Operation
 
 
 trait CommonThriftTests {
@@ -437,6 +443,68 @@ trait CommonThriftTests {
     }
     assert(!typeInfoResultSet.next())
   }
+
+  def largeResultSetTest(statement: Statement): Unit = {
+    val numRows = 10000
+    val rs = statement.executeQuery(s"select id from range($numRows)")
+    var count = 0
+    var sum = 0L
+    while (rs.next()) {
+      sum += rs.getLong(1)
+      count += 1
+    }
+    rs.close()
+    assert(count == numRows)
+    assert(sum == (0L until numRows.toLong).sum)
+  }
+
+  def getInfoTest(connection: Connection): Unit = {
+    val md = connection.getMetaData
+    assert(Option(md.getDatabaseProductName).exists(_.nonEmpty))
+    assert(Option(md.getDatabaseProductVersion).exists(_.nonEmpty))
+    // Driver side metadata is served by the Hive JDBC driver, but exercising it ensures the
+    // full GetInfo round-trip is wired up.
+    assert(Option(md.getDriverName).exists(_.nonEmpty))
+  }
+
+  def cancelRunningQueryTest(statement: Statement): Unit = {
+    // Start the Livy session first so that RUNNING below means the query is executing in Spark.
+    statement.executeQuery("select 1").close()
+
+    // HiveStatement.executeAsync cannot be used here: it fetches the result schema right away,
+    // which Livy only has once the statement has completed.
+    val hiveStatement = statement.asInstanceOf[HiveStatement]
+    val query = Future {
+      hiveStatement.executeQuery("select java_method('java.lang.Thread', 'sleep', 3000L)")
+    }(ExecutionContext.global)
+
+    val sessionManager = LivyThriftServer.getInstance.get.getSessionManager
+    def runningQuery: Option[Operation] = sessionManager.getSessions.toSeq
+      .flatMap(h => Try(sessionManager.operationManager.getOperations(h)).getOrElse(Set.empty))
+      .flatMap(h => Try(sessionManager.operationManager.getOperation(h)).toOption)
+      .collectFirst {
+        case op: LivyExecuteStatementOperation if op.getStatus.state == OperationState.RUNNING =>
+          op
+      }
+    // HiveStatement.cancel() silently does nothing until the client has received the operation
+    // handle, and getQueryId() returns null only while that handle is missing (Livy's server
+    // rejects GetQueryId itself, which also means the handle is there).
+    def clientHasHandle: Boolean = Try(hiveStatement.getQueryId).map(_ != null).getOrElse(true)
+
+    val operation = eventually(timeout(1.minute), interval(100.millis)) {
+      val op = runningQuery
+      assert(op.isDefined, "query has not started running yet")
+      assert(clientHasHandle, "client has not received the operation handle yet")
+      op.get
+    }
+    hiveStatement.cancel()
+    assert(operation.getStatus.state == OperationState.CANCELED)
+
+    val outcome = Try(Await.result(query, 1.minute))
+    assert(outcome.isFailure, "cancelled query returned a result")
+    assert(outcome.failed.get.isInstanceOf[SQLException])
+    assert(outcome.failed.get.getMessage.startsWith(HiveStatement.QUERY_CANCELLED_MESSAGE))
+  }
 }
 
 class BinaryThriftServerSuite extends ThriftServerBaseTest with CommonThriftTests {
@@ -666,6 +734,24 @@ class BinaryThriftServerSuite extends ThriftServerBaseTest with CommonThriftTest
       assert(livySessionManager.get(testSessionName).get.name.get == testSessionName)
     }
   }
+
+  test("fetch a large result set over binary transport") {
+    withJdbcStatement { statement =>
+      largeResultSetTest(statement)
+    }
+  }
+
+  test("GetInfo returns server/driver metadata") {
+    withJdbcConnection { connection =>
+      getInfoTest(connection)
+    }
+  }
+
+  test("cancelling a running statement moves the operation to CANCELED") {
+    withJdbcStatement { statement =>
+      cancelRunningQueryTest(statement)
+    }
+  }
 }
 
 class HttpThriftServerSuite extends ThriftServerBaseTest with CommonThriftTests {
@@ -730,6 +816,26 @@ class HttpThriftServerSuite extends ThriftServerBaseTest with CommonThriftTests 
   test("get types info test") {
     withJdbcConnection { c =>
       getTypeInfoTest(c)
+    }
+  }
+
+  test("fetch a large result set over HTTP transport") {
+    // Drives many FetchResults round-trips over HTTP, exercising ThriftHttpServlet
+    // .processThriftRequest and the HttpClient 4.x THttpClient shim end-to-end (not just connect).
+    withJdbcStatement { statement =>
+      largeResultSetTest(statement)
+    }
+  }
+
+  test("GetInfo returns server/driver metadata") {
+    withJdbcConnection { connection =>
+      getInfoTest(connection)
+    }
+  }
+
+  test("cancelling a running statement moves the operation to CANCELED") {
+    withJdbcStatement { statement =>
+      cancelRunningQueryTest(statement)
     }
   }
 }
