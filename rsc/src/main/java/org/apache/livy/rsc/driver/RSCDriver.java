@@ -291,7 +291,7 @@ public class RSCDriver extends BaseProtocol {
    * and returning a null context is allowed. In that case, the context exposed by
    * JobContext will be null.
    *
-   * @return The initalized SparkContext
+   * @return The initialized SparkContext
    */
   protected SparkEntries initializeSparkEntries() throws Exception {
     SparkEntries entries = new SparkEntries(conf);
